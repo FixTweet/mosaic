@@ -47,7 +47,10 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> Option<RgbImage> {
                 Size { width: size.second_width, height: size.height },
             );
 
-            image::imageops::overlay(&mut background, &first, 0, 0);
+            image::imageops::overlay(
+                &mut background, &first,
+                0, 0
+            );
             image::imageops::overlay(
                 &mut background, &second,
                 (size.first_width + SPACING_SIZE) as i64, 0,
@@ -88,14 +91,20 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> Option<RgbImage> {
                 );
                 third = resize_image(
                     third,
-                    Size { width: three_horizontal.second_width, height: three_horizontal.height },
+                    Size {
+                        width: three_horizontal.second_width,
+                        height: three_horizontal.height,
+                    },
                 );
 
                 let mut background = create_background(
                     three_horizontal.width,
                     three_horizontal.height,
                 );
-                image::imageops::overlay(&mut background, &first, 0, 0);
+                image::imageops::overlay(
+                    &mut background, &first,
+                    0, 0,
+                );
                 image::imageops::overlay(
                     &mut background, &second,
                     (first.width() + SPACING_SIZE) as i64, 0,
@@ -123,7 +132,10 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> Option<RgbImage> {
                 );
                 third = resize_image(
                     third,
-                    Size { width: third_size.width, height: third_size.second_height },
+                    Size {
+                        width: third_size.width,
+                        height: third_size.second_height,
+                    },
                 );
 
                 let mut background = create_background(third_size.width, third_size.height);
