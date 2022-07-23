@@ -23,6 +23,7 @@
  */
 
 use std::collections::VecDeque;
+use std::time::Instant;
 
 use itertools::Itertools;
 use warp::{Filter, path, Reply};
@@ -54,15 +55,30 @@ async fn handle(_id: String, image_ids: Vec<String>) -> Response<warp::hyper::Bo
             .into_response();
     }
 
+    let start = Instant::now();
     let image = mosaic(VecDeque::from(images));
-    return match image_response(image) {
+    let size = format!("{0}x{1}", image.width(), image.height());
+    let mosaic_time = start.elapsed();
+
+    let encoding_start = Instant::now();
+    let encoded = match image_response(image) {
         Ok(res) => res.into_response(),
-        Err(_) => Response::builder()
+        Err(_) => return Response::builder()
             .status(500)
             .body("Failed to encode image")
             .unwrap()
             .into_response()
     };
+
+    println!(
+        "Took {time}ms (mosaic: {mosaic}ms, encoding: {enc}ms) to process: {ids}. Image size: {size}.",
+        time = start.elapsed().as_millis(),
+        mosaic = mosaic_time.as_millis(),
+        ids = image_ids.join(", "),
+        enc = encoding_start.elapsed().as_millis(),
+        size = size,
+    );
+    encoded
 }
 
 #[tokio::main]
