@@ -28,10 +28,17 @@ use image::imageops::FilterType;
 use image::RgbImage;
 
 const SPACING_SIZE: u32 = 10;
+/*
+ * This number will be multiplied by the height and weight
+ * if all combined images are over 2000 pixels in height or width.
+ * In my tests setting this this to 0.5 increased performance by 4x (at the cost of 50% resolution)
+ * NOTE: This only works for when there's 4 images supplied.
+ */
+const BIG_IMAGE_MULTIPLIER: f32 = 1.0;
 
-pub fn mosaic(mut images: VecDeque<RgbImage>) -> Option<RgbImage> {
+pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
     return match images.len() {
-        1 => Some(images.pop_front().unwrap()),
+        1 => images.pop_front().unwrap(),
         2 => {
             let mut first = images.pop_front().unwrap();
             let mut second = images.pop_front().unwrap();
@@ -55,7 +62,7 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> Option<RgbImage> {
                 &mut background, &second,
                 (size.first_width + SPACING_SIZE) as i64, 0,
             );
-            Some(background)
+            background
         }
         3 => {
             let mut first = images.pop_front().unwrap();
@@ -113,7 +120,7 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> Option<RgbImage> {
                     &mut background, &third,
                     (first.width() + SPACING_SIZE + second.width() + SPACING_SIZE) as i64, 0,
                 );
-                Some(background)
+                background
             } else {
                 let height_multiplier = third_size.width as f32 / size.width as f32;
                 first = resize_image(
@@ -151,7 +158,7 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> Option<RgbImage> {
                     &mut background, &third,
                     0, (first.height() + SPACING_SIZE) as i64,
                 );
-                Some(background)
+                background
             }
         }
         4 => {
@@ -172,7 +179,7 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> Option<RgbImage> {
             // If the image is too big, make it smaller.
             // This is to prevent running out of memory and to speed up computation.
             let size_mult = if all.width > 2000 || all.height > 2000 {
-                0.5
+                BIG_IMAGE_MULTIPLIER
             } else {
                 1.0
             };
@@ -220,9 +227,9 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> Option<RgbImage> {
                 (third.width() as f32 + SPACING_SIZE as f32 * bottom_width_mult) as i64,
                 (first.height() + SPACING_SIZE) as i64,
             );
-            Some(background)
+            background
         }
-        _ => None
+        _ => panic!("impossible image length")
     };
 }
 
@@ -287,7 +294,7 @@ fn resize_image(image: RgbImage, size: Size) -> RgbImage {
             &image,
             size.width,
             size.height,
-            FilterType::Triangle, // If we want to make this even faster we should use Nearest.
+            FilterType::Triangle, // The original uses Lanczos3 but in practice the difference is not visible.
         );
     }
     return image;

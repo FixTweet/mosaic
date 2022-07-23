@@ -22,70 +22,58 @@
  * SOFTWARE.
  */
 
-use cfg_if::cfg_if;
-use image::{EncodableLayout, ImageEncoder, RgbImage};
-use image::codecs::png::PngEncoder;
-use worker::{Error, Fetch, Headers, Request, RequestInit, Response};
+use image::{EncodableLayout, ImageError, RgbImage};
+use reqwest::Client;
+use reqwest::header::HeaderMap;
+use warp::http::Response;
 
 const FAKE_CHROME_VERSION: u16 = 103;
 
-cfg_if! {
-    // https://github.com/rustwasm/console_error_panic_hook#readme
-    if #[cfg(feature = "console_error_panic_hook")] {
-        extern crate console_error_panic_hook;
-        pub use self::console_error_panic_hook::set_once as set_panic_hook;
-    } else {
-        #[inline]
-        pub fn set_panic_hook() {}
-    }
-}
-
-pub fn image_response(img: RgbImage) -> Result<Response, Error> {
-    let mut out = vec![];
-    let enc = PngEncoder::new(&mut out);
-    enc.write_image(
+pub fn image_response(img: RgbImage) -> Result<Response<Vec<u8>>, ImageError> {
+    let encoded = webp::Encoder::from_rgb(
         img.as_bytes(),
         img.width(),
         img.height(),
-        image::ColorType::Rgb8,
-    ).expect("failed to encode image");
+    ).encode(90.0);
 
-    Response::from_bytes(out.to_vec())
-        .map(|mut res| {
-            res.headers_mut()
-                .set("Content-Type", "image/png")
-                .expect("failed to set headers");
-            res
-        })
+    Ok(
+        Response::builder()
+            .status(200)
+            .header("Content-Type", "image/webp")
+            .body(encoded.to_vec())
+            .unwrap()
+    )
 }
 
-pub async fn fetch_image(id: &String) -> Result<RgbImage, Error> {
-    let url = format!("https://pbs.twimg.com/media/{}?format=png&name=large", id);
-    let mut req = RequestInit::new();
+pub async fn fetch_image(id: &String) -> Option<RgbImage> {
+    // TODO keep this in memory
+    let client = Client::new();
+    let mut headers = HeaderMap::new();
+    headers.append("sec-ch-ua", format!("\".Not/A)Brand\";v=\"99\", \"Google Chrome\";v=\"{version}\", \"Chromium\";v=\"{version}\"", version = FAKE_CHROME_VERSION).parse().unwrap());
+    headers.append("DNT", "1".parse().unwrap());
+    headers.append("x-twitter-client-language", "en".parse().unwrap());
+    headers.append("sec-ch-ua-mobile", "?0".parse().unwrap());
+    headers.append("content-type", "application/x-www-form-urlencoded".parse().unwrap());
+    headers.append("User-Agent", format!("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{}.0.0.0 Safari/537.36", FAKE_CHROME_VERSION).parse().unwrap());
+    headers.append("x-twitter-active-user", "yes".parse().unwrap());
+    headers.append("sec-ch-ua-platform", "\"Windows\"".parse().unwrap());
+    headers.append("Accept", "*/*".parse().unwrap());
+    headers.append("Origin", "https://twitter.com".parse().unwrap());
+    headers.append("Sec-Fetch-Site", "same-site".parse().unwrap());
+    headers.append("Sec-Fetch-Mode", "cors".parse().unwrap());
+    headers.append("Sec-Fetch-Dest", "empty".parse().unwrap());
+    headers.append("Referer", "https://twitter.com/".parse().unwrap());
+    headers.append("Accept-Encoding", "gzip, deflate, br".parse().unwrap());
+    headers.append("Accept-Language", "en".parse().unwrap());
 
-    let mut headers = Headers::new();
-    headers.append("sec-ch-ua", &*format!("\".Not/A)Brand\";v=\"99\", \"Google Chrome\";v=\"{version}\", \"Chromium\";v=\"{version}\"", version = FAKE_CHROME_VERSION))?;
-    headers.append("DNT", "1")?;
-    headers.append("x-twitter-client-language", "en")?;
-    headers.append("sec-ch-ua-mobile", "?0")?;
-    headers.append("content-type", "application/x-www-form-urlencoded")?;
-    headers.append("User-Agent", &*format!("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{}.0.0.0 Safari/537.36", FAKE_CHROME_VERSION))?;
-    headers.append("x-twitter-active-user", "yes")?;
-    headers.append("sec-ch-ua-platform", "\"Windows\"")?;
-    headers.append("Accept", "*/*")?;
-    headers.append("Origin", "https://twitter.com")?;
-    headers.append("Sec-Fetch-Site", "same-site")?;
-    headers.append("Sec-Fetch-Mode", "cors")?;
-    headers.append("Sec-Fetch-Dest", "empty")?;
-    headers.append("Referer", "https://twitter.com/")?;
-    headers.append("Accept-Encoding", "gzip, deflate, br")?;
-    headers.append("Accept-Language", "en")?;
-    req.with_headers(headers);
-
-    let mut res = Fetch::Request(Request::new_with_init(&*url, &req)?).send().await?;
-    let img = image::load_from_memory(&*res.bytes().await?);
+    let res = client
+        .get(format!("https://pbs.twimg.com/media/{}?format=png&name=large", id))
+        .headers(headers)
+        .send()
+        .await.ok()?;
+    let img = image::load_from_memory(&*res.bytes().await.ok()?);
     return match img {
-        Ok(img) => Ok(img.into_rgb8()),
-        Err(_) => Err(Error::from("Invalid image"))
+        Ok(img) => Some(img.into_rgb8()),
+        Err(_) => None
     }
 }
