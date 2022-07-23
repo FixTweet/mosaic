@@ -1,8 +1,8 @@
-# pxtwitter-mosaic
+# pxTwitter-Mosaic
 ![](https://skillicons.dev/icons?i=rust)
 
-Rewrite of [pxTwitter-Mosaic](https://github.com/dangeredwolf/pxTwitter-Mosaic) in Rust.
-This has the same algorithm and functionality as the original project, but it's optimized.
+Implementation of [pxTwitter-Mosaic-Reference](https://github.com/dangeredwolf/pxTwitter-Mosaic-Reference) in Rust originally written by [Antonio32A](https://github.com/Antonio32A/pxtwitter-mosaic).  
+This has the same algorithm and functionality as the TypeScript reference project, but it's optimized.
 
 # Notice
 ![](https://forthebadge.com/images/badges/contains-tasty-spaghetti-code.svg)
