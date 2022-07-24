@@ -38,7 +38,6 @@ const BIG_IMAGE_MULTIPLIER: f32 = 1.0;
 
 pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
     return match images.len() {
-        1 => images.pop_front().unwrap(),
         2 => {
             let mut first = images.pop_front().unwrap();
             let mut second = images.pop_front().unwrap();

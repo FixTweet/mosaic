@@ -22,25 +22,50 @@
  * SOFTWARE.
  */
 
-use image::{EncodableLayout, ImageError, RgbImage};
+use image::{EncodableLayout, ImageEncoder, ImageError, RgbImage};
+use image::codecs::png::PngEncoder;
 use reqwest::Client;
 use reqwest::header::HeaderMap;
 use warp::http::Response;
 
 const FAKE_CHROME_VERSION: u16 = 103;
 
-pub fn image_response(img: RgbImage) -> Result<Response<Vec<u8>>, ImageError> {
-    let encoded = webp::Encoder::from_rgb(
-        img.as_bytes(),
-        img.width(),
-        img.height(),
-    ).encode(90.0);
+pub enum ImageType {
+    WebP,
+    PNG,
+}
+
+pub fn image_response(img: RgbImage, encoder: ImageType) -> Result<Response<Vec<u8>>, ImageError> {
+    let encoded = match encoder {
+        ImageType::WebP => webp::Encoder::from_rgb(
+            img.as_bytes(),
+            img.width(),
+            img.height(),
+        ).encode(90.0).to_vec(),
+
+        ImageType::PNG => {
+            let mut out = vec![];
+            let enc = PngEncoder::new(&mut out);
+            enc.write_image(
+                img.as_bytes(),
+                img.width(),
+                img.height(),
+                image::ColorType::Rgb8,
+            )?;
+            out.to_vec()
+        }
+    };
+
+    let content_type = match encoder {
+        ImageType::WebP => "image/webp",
+        ImageType::PNG => "image/png"
+    };
 
     Ok(
         Response::builder()
             .status(200)
-            .header("Content-Type", "image/webp")
-            .body(encoded.to_vec())
+            .header("Content-Type", content_type)
+            .body(encoded)
             .unwrap()
     )
 }
