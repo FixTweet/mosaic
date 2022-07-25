@@ -22,7 +22,10 @@
  * SOFTWARE.
  */
 
+use std::str::FromStr;
+
 use image::{EncodableLayout, ImageEncoder, ImageError, RgbImage};
+use image::codecs::jpeg::JpegEncoder;
 use image::codecs::png::PngEncoder;
 use reqwest::Client;
 use reqwest::header::HeaderMap;
@@ -33,6 +36,20 @@ const FAKE_CHROME_VERSION: u16 = 103;
 pub enum ImageType {
     WebP,
     PNG,
+    JPEG,
+}
+
+impl FromStr for ImageType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "webp" => Ok(ImageType::WebP),
+            "png" => Ok(ImageType::PNG),
+            "jpeg" => Ok(ImageType::JPEG),
+            _ => Err(())
+        }
+    }
 }
 
 pub fn image_response(img: RgbImage, encoder: ImageType) -> Result<Response<Vec<u8>>, ImageError> {
@@ -54,11 +71,24 @@ pub fn image_response(img: RgbImage, encoder: ImageType) -> Result<Response<Vec<
             )?;
             out.to_vec()
         }
+
+        ImageType::JPEG => {
+            let mut out = vec![];
+            let enc = JpegEncoder::new(&mut out);
+            enc.write_image(
+                img.as_bytes(),
+                img.width(),
+                img.height(),
+                image::ColorType::Rgb8,
+            )?;
+            out.to_vec()
+        }
     };
 
     let content_type = match encoder {
         ImageType::WebP => "image/webp",
-        ImageType::PNG => "image/png"
+        ImageType::PNG => "image/png",
+        ImageType::JPEG => "image/jpeg"
     };
 
     Ok(
@@ -100,5 +130,5 @@ pub async fn fetch_image(id: &String) -> Option<RgbImage> {
     return match img {
         Ok(img) => Some(img.into_rgb8()),
         Err(_) => None
-    }
+    };
 }

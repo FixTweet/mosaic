@@ -27,7 +27,7 @@ use std::time::Instant;
 
 use itertools::Itertools;
 use warp::{Filter, path, Reply};
-use warp::http::{HeaderMap, Response};
+use warp::http::Response;
 
 use crate::mosaic::mosaic;
 use crate::utils::{fetch_image, image_response, ImageType};
@@ -35,7 +35,7 @@ use crate::utils::{fetch_image, image_response, ImageType};
 mod utils;
 mod mosaic;
 
-async fn handle(_id: String, image_ids: Vec<String>, headers: HeaderMap) -> Response<warp::hyper::Body> {
+async fn handle(image_type: ImageType, _id: String, image_ids: Vec<String>) -> Response<warp::hyper::Body> {
     let images = futures::future::join_all(image_ids.iter().map(fetch_image)).await
         .into_iter()
         .filter(|i| {
@@ -55,23 +55,13 @@ async fn handle(_id: String, image_ids: Vec<String>, headers: HeaderMap) -> Resp
             .into_response();
     }
 
-    let agent = match headers.get("User-Agent") {
-        Some(header) => header.to_str().unwrap_or("unknown"),
-        None => "unknown"
-    };
-    let encoding_type = if agent == "TelegramBot (like TwitterBot)" {
-        ImageType::PNG
-    } else {
-        ImageType::WebP
-    };
-
     let start = Instant::now();
     let image = mosaic(VecDeque::from(images));
     let size = format!("{0}x{1}", image.width(), image.height());
     let mosaic_time = start.elapsed();
 
     let encoding_start = Instant::now();
-    let encoded = match image_response(image, encoding_type) {
+    let encoded = match image_response(image, image_type) {
         Ok(res) => res.into_response(),
         Err(_) => return Response::builder()
             .status(500)
@@ -94,18 +84,21 @@ async fn handle(_id: String, image_ids: Vec<String>, headers: HeaderMap) -> Resp
 #[tokio::main]
 async fn main() {
     let routes = warp::get().and(
-        path!(String / String / String / String / String)
-            .and(warp::header::headers_cloned())
-            .then(|id, a, b, c, d, headers| handle(id, vec![a, b, c, d], headers))
-            .or(
-                path!(String / String / String / String)
-                    .and(warp::header::headers_cloned())
-                    .then(|id, a, b, c, headers| handle(id, vec![a, b, c], headers))
+        path!(ImageType / String / String / String / String / String)
+            .then(|image_type, id, a, b, c, d|
+                handle(image_type, id, vec![a, b, c, d])
             )
             .or(
-                path!(String / String / String)
-                    .and(warp::header::headers_cloned())
-                    .then(|id, a, b, headers| handle(id, vec![a, b], headers))
+                path!(ImageType / String / String / String / String)
+                    .then(|image_type, id, a, b, c|
+                        handle(image_type, id, vec![a, b, c])
+                    )
+            )
+            .or(
+                path!(ImageType / String / String / String)
+                    .then(|image_type, id, a, b|
+                        handle(image_type, id, vec![a, b])
+                    )
             ),
     );
 
