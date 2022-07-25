@@ -130,5 +130,5 @@ pub async fn fetch_image(id: &String) -> Option<RgbImage> {
     return match img {
         Ok(img) => Some(img.into_rgb8()),
         Err(_) => None
-    }
+    };
 }

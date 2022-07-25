@@ -27,7 +27,7 @@ use std::time::Instant;
 
 use itertools::Itertools;
 use warp::{Filter, path, Reply};
-use warp::http::{Response};
+use warp::http::Response;
 
 use crate::mosaic::mosaic;
 use crate::utils::{fetch_image, image_response, ImageType};
