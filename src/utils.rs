@@ -27,6 +27,7 @@ use std::str::FromStr;
 use image::{EncodableLayout, ImageEncoder, ImageError, RgbImage};
 use image::codecs::jpeg::JpegEncoder;
 use image::codecs::png::PngEncoder;
+use itertools::Itertools;
 use reqwest::Client;
 use reqwest::header::HeaderMap;
 use warp::http::Response;
@@ -131,4 +132,17 @@ pub async fn fetch_image(id: &String) -> Option<RgbImage> {
         Ok(img) => Some(img.into_rgb8()),
         Err(_) => None
     };
+}
+
+pub async fn fetch_images(image_ids: &Vec<String>) -> Vec<RgbImage> {
+    futures::future::join_all(image_ids.iter().map(fetch_image)).await
+        .into_iter()
+        .filter(|i| {
+            if !i.is_some() {
+                println!("Failed to download image");
+                return false;
+            }
+            return true;
+        }).map(|i| i.unwrap())
+        .collect_vec()
 }

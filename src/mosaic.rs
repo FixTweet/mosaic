@@ -26,6 +26,7 @@ use std::collections::VecDeque;
 
 use image::imageops::FilterType;
 use image::RgbImage;
+use serde::Serialize;
 
 const SPACING_SIZE: u32 = 10;
 /*
@@ -37,7 +38,7 @@ const SPACING_SIZE: u32 = 10;
 const BIG_IMAGE_MULTIPLIER: f32 = 1.0;
 
 pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
-    return match images.len() {
+    match images.len() {
         2 => {
             let mut first = images.pop_front().unwrap();
             let mut second = images.pop_front().unwrap();
@@ -229,7 +230,63 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
             background
         }
         _ => panic!("impossible image length")
-    };
+    }
+}
+
+pub fn mosaic_size(mut images: VecDeque<RgbImage>) -> Size {
+    match images.len() {
+        2 => {
+            let first = images.pop_front().unwrap();
+            let second = images.pop_front().unwrap();
+            let size = calc_horizontal_size(&first, &second);
+            Size { width: size.width, height: size.height }
+        },
+        3 => {
+            let first = images.pop_front().unwrap();
+            let second = images.pop_front().unwrap();
+            let third = images.pop_front().unwrap();
+            let size = calc_horizontal_size(&first, &second);
+            let third_size = calc_vertical_size_raw(
+                Size { width: size.width, height: size.height },
+                Size { width: third.width(), height: third.height() },
+            );
+
+            if third_size.second_height as f32 * 1.5 > size.height as f32 {
+                let three_horizontal = calc_horizontal_size_raw(
+                    Size { width: size.width, height: size.height },
+                    Size { width: third.width(), height: third.height() },
+                );
+                Size { width: three_horizontal.width, height: three_horizontal.height }
+            } else {
+                Size { width: third_size.width, height: third_size.height }
+            }
+        },
+        4 => {
+            let first = images.pop_front().unwrap();
+            let second = images.pop_front().unwrap();
+            let third = images.pop_front().unwrap();
+            let fourth = images.pop_front().unwrap();
+
+            let top = calc_horizontal_size(&first, &second);
+            let bottom = calc_horizontal_size(&third, &fourth);
+            let all = calc_vertical_size_raw(
+                Size { width: top.width, height: top.height },
+                Size { width: bottom.width, height: bottom.height },
+            );
+
+            let size_mult = if all.width > 2000 || all.height > 2000 {
+                BIG_IMAGE_MULTIPLIER
+            } else {
+                1.0
+            };
+
+            Size {
+                width: (all.width as f32 * size_mult) as u32,
+                height: (all.height as f32 * size_mult) as u32,
+            }
+        },
+        _ => panic!("impossible image length")
+    }
 }
 
 fn create_background(width: u32, height: u32) -> RgbImage {
@@ -299,20 +356,20 @@ fn resize_image(image: RgbImage, size: Size) -> RgbImage {
     return image;
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize)]
 pub struct Size {
     pub width: u32,
     pub height: u32,
 }
 
-pub struct HorizontalSize {
+struct HorizontalSize {
     pub width: u32,
     pub height: u32,
     pub first_width: u32,
     pub second_width: u32,
 }
 
-pub struct VerticalSize {
+struct VerticalSize {
     pub width: u32,
     pub height: u32,
     pub first_height: u32,

@@ -25,28 +25,18 @@
 use std::collections::VecDeque;
 use std::time::Instant;
 
-use itertools::Itertools;
 use warp::{Filter, path, Reply};
 use warp::http::Response;
+use warp::hyper::Body;
 
-use crate::mosaic::mosaic;
-use crate::utils::{fetch_image, image_response, ImageType};
+use crate::mosaic::{mosaic, mosaic_size};
+use crate::utils::{fetch_images, image_response, ImageType};
 
 mod utils;
 mod mosaic;
 
-async fn handle(image_type: ImageType, _id: String, image_ids: Vec<String>) -> Response<warp::hyper::Body> {
-    let images = futures::future::join_all(image_ids.iter().map(fetch_image)).await
-        .into_iter()
-        .filter(|i| {
-            if !i.is_some() {
-                println!("Failed to download image");
-                return false;
-            }
-            return true;
-        }).map(|i| i.unwrap())
-        .collect_vec();
-
+async fn handle(image_type: ImageType, _id: String, image_ids: Vec<String>) -> Response<Body> {
+    let images = fetch_images(&image_ids).await;
     if images.len() == 0 {
         return Response::builder()
             .status(500)
@@ -81,6 +71,25 @@ async fn handle(image_type: ImageType, _id: String, image_ids: Vec<String>) -> R
     encoded
 }
 
+async fn handle_size(_id: String, image_ids: Vec<String>) -> Response<Body> {
+    let images = fetch_images(&image_ids).await;
+    if images.len() == 0 {
+        return Response::builder()
+            .status(500)
+            .body("Failed to download all images.")
+            .unwrap()
+            .into_response();
+    }
+
+    let size = mosaic_size(VecDeque::from(images));
+    Response::builder()
+        .status(200)
+        .header("Content-Type", "application/json")
+        .body(serde_json::to_vec(&size).unwrap())
+        .unwrap()
+        .into_response()
+}
+
 #[tokio::main]
 async fn main() {
     let routes = warp::get().and(
@@ -98,6 +107,24 @@ async fn main() {
                 path!(ImageType / String / String / String)
                     .then(|image_type, id, a, b|
                         handle(image_type, id, vec![a, b])
+                    )
+            )
+            .or(
+                path!("size" / String / String / String / String / String)
+                    .then(|id, a, b, c, d|
+                        handle_size(id, vec![a, b, c, d])
+                    )
+            )
+            .or(
+                path!("size" / String / String / String / String)
+                    .then(|id, a, b, c|
+                        handle_size(id, vec![a, b, c])
+                    )
+            )
+            .or(
+                path!("size" / String / String / String)
+                    .then(|id, a, b|
+                        handle_size(id, vec![a, b])
                     )
             ),
     );
