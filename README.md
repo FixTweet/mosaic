@@ -1,7 +1,7 @@
-# pxTwitter-Mosaic
+# FixTweet Mosaic
 ![](https://skillicons.dev/icons?i=rust)
 
-Implementation of [pxTwitter-Mosaic-Reference](https://github.com/dangeredwolf/pxTwitter-Mosaic-Reference) in Rust originally written by [Antonio32A](https://github.com/Antonio32A/pxtwitter-mosaic).  
+Implementation of [mosaic-reference](https://github.com/FixTweet/mosaic-reference) in Rust originally written by [Antonio32A](https://github.com/Antonio32A).  
 This has the same algorithm and functionality as the TypeScript reference project, but it's optimized.
 
 # Notice
