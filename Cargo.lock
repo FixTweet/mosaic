@@ -269,6 +269,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "fixtweet-mosaic"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "image",
+ "itertools",
+ "reqwest",
+ "tokio",
+ "warp",
+ "webp",
+]
+
+[[package]]
 name = "flate2"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1024,19 +1037,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd96a1e8ed2596c337f8eae5f24924ec83f5ad5ab21ea8e455d3566c69fbcaf7"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "pxtwitter-mosaic"
-version = "0.1.0"
-dependencies = [
- "futures",
- "image",
- "itertools",
- "reqwest",
- "tokio",
- "warp",
- "webp",
 ]
 
 [[package]]

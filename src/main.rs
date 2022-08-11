@@ -108,6 +108,6 @@ async fn main() {
         .ok()
         .expect("PORT environment variable is not an u16.");
 
-    println!("Starting pxtwitter-mosaic on on 127.0.0.1:{}", port);
+    println!("Starting fixtweet-mosaic on on 127.0.0.1:{}", port);
     warp::serve(routes).run(([127, 0, 0, 1], port)).await;
 }

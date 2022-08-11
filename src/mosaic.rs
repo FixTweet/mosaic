@@ -206,7 +206,7 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
             });
 
             // We also multiply the spacing by how much the width increased, this isn't ideal but
-            // it's barely noticeable and it's how the original pxTwitter-Mosaic code works.
+            // it's barely noticeable and it's how the original FixTweet-Mosaic code works.
             image::imageops::overlay(
                 &mut background, &first,
                 0, 0,
