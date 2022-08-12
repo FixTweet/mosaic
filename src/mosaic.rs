@@ -28,13 +28,7 @@ use image::imageops::FilterType;
 use image::RgbImage;
 
 const SPACING_SIZE: u32 = 10;
-/*
- * This number will be multiplied by the height and weight
- * if all combined images are over 2000 pixels in height or width.
- * In my tests setting this this to 0.5 increased performance by 4x (at the cost of 50% resolution)
- * NOTE: This only works for when there's 4 images supplied.
- */
-const BIG_IMAGE_MULTIPLIER: f32 = 1.0;
+const MAX_SIZE: u32 = 4000;
 
 pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
     return match images.len() {
@@ -42,17 +36,30 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
             let mut first = images.pop_front().unwrap();
             let mut second = images.pop_front().unwrap();
             let size = calc_horizontal_size(&first, &second);
-            let mut background = create_background(size.width, size.height);
+            let size_mult = calc_multiplier(Size {
+                width: size.width,
+                height: size.height,
+            });
 
             first = resize_image(
                 first,
-                Size { width: size.first_width, height: size.height },
+                Size {
+                    width: (size.first_width as f32 * size_mult).round() as u32,
+                    height: (size.height as f32 * size_mult).round() as u32,
+                },
             );
             second = resize_image(
                 second,
-                Size { width: size.second_width, height: size.height },
+                Size {
+                    width: (size.second_width as f32 * size_mult).round() as u32,
+                    height: (size.height as f32 * size_mult).round() as u32,
+                },
             );
 
+            let mut background = create_background(
+                (size.width as f32 * size_mult).round() as u32,
+                (size.height as f32 * size_mult).round() as u32,
+            );
             image::imageops::overlay(
                 &mut background, &first,
                 0, 0,
@@ -80,32 +87,36 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                     Size { width: third.width(), height: third.height() },
                 );
                 let first_two_multiplier = three_horizontal.height as f32 / size.height as f32;
+                let size_mult = calc_multiplier(Size {
+                    width: three_horizontal.width,
+                    height: three_horizontal.height,
+                });
 
                 first = resize_image(
                     first,
                     Size {
-                        width: (size.first_width as f32 * first_two_multiplier).round() as u32,
-                        height: three_horizontal.height,
+                        width: (size.first_width as f32 * first_two_multiplier * size_mult).round() as u32,
+                        height: (three_horizontal.height as f32 * size_mult).round() as u32,
                     },
                 );
                 second = resize_image(
                     second,
                     Size {
-                        width: (size.second_width as f32 * first_two_multiplier).round() as u32,
-                        height: three_horizontal.height,
+                        width: (size.second_width as f32 * first_two_multiplier * size_mult).round() as u32,
+                        height: (three_horizontal.height as f32 * size_mult).round() as u32,
                     },
                 );
                 third = resize_image(
                     third,
                     Size {
-                        width: three_horizontal.second_width,
-                        height: three_horizontal.height,
+                        width: (three_horizontal.second_width as f32 * size_mult).round() as u32,
+                        height: (three_horizontal.height as f32 * size_mult).round() as u32,
                     },
                 );
 
                 let mut background = create_background(
-                    three_horizontal.width,
-                    three_horizontal.height,
+                    (three_horizontal.width as f32 * size_mult).round() as u32,
+                    (three_horizontal.height as f32 * size_mult).round() as u32,
                 );
                 image::imageops::overlay(
                     &mut background, &first,
@@ -122,29 +133,37 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                 background
             } else {
                 let height_multiplier = third_size.width as f32 / size.width as f32;
+                let size_mult = calc_multiplier(Size {
+                    width: third_size.width,
+                    height: third_size.height,
+                });
+
                 first = resize_image(
                     first,
                     Size {
-                        width: size.first_width,
-                        height: (size.height as f32 * height_multiplier).round() as u32,
+                        width: (size.first_width as f32 * size_mult).round() as u32,
+                        height: (size.height as f32 * height_multiplier * size_mult).round() as u32,
                     },
                 );
                 second = resize_image(
                     second,
                     Size {
-                        width: size.second_width,
-                        height: (size.height as f32 * height_multiplier).round() as u32,
+                        width: (size.second_width as f32 * size_mult).round() as u32,
+                        height: (size.height as f32 * height_multiplier * size_mult).round() as u32,
                     },
                 );
                 third = resize_image(
                     third,
                     Size {
-                        width: third_size.width,
-                        height: third_size.second_height,
+                        width: (third_size.width as f32 * size_mult).round() as u32,
+                        height: (third_size.second_height as f32 * size_mult).round() as u32,
                     },
                 );
 
-                let mut background = create_background(third_size.width, third_size.height);
+                let mut background = create_background(
+                    (third_size.width as f32 * size_mult).round() as u32,
+                    (third_size.height as f32 * size_mult).round() as u32,
+                );
                 image::imageops::overlay(
                     &mut background, &first,
                     0, 0,
@@ -174,19 +193,7 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
             );
             let top_width_mult = all.first_height as f32 / top.height as f32;
             let bottom_width_mult = all.second_height as f32 / bottom.height as f32;
-
-            // If the image is too big, make it smaller.
-            // This is to prevent running out of memory and to speed up computation.
-            let size_mult = if all.width > 2000 || all.height > 2000 {
-                BIG_IMAGE_MULTIPLIER
-            } else {
-                1.0
-            };
-
-            let mut background = create_background(
-                (all.width as f32 * size_mult) as u32,
-                (all.height as f32 * size_mult) as u32,
-            );
+            let size_mult = calc_multiplier(Size { width: all.width, height: all.height });
 
             first = resize_image(first, Size {
                 width: (top.first_width as f32 * top_width_mult * size_mult).round() as u32,
@@ -204,6 +211,11 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                 width: (bottom.second_width as f32 * bottom_width_mult * size_mult).round() as u32,
                 height: (all.second_height as f32 * size_mult) as u32,
             });
+
+            let mut background = create_background(
+                (all.width as f32 * size_mult) as u32,
+                (all.height as f32 * size_mult) as u32,
+            );
 
             // We also multiply the spacing by how much the width increased, this isn't ideal but
             // it's barely noticeable and it's how the original FixTweet-Mosaic code works.
@@ -284,6 +296,20 @@ fn calc_vertical_size_raw(first: Size, second: Size) -> VerticalSize {
         height: small_height + SPACING_SIZE + big.height,
         first_height: if swapped { small_height } else { big.height },
         second_height: if swapped { big.height } else { small_height },
+    }
+}
+
+fn calc_multiplier(size: Size) -> f32 {
+    let biggest = if size.width > size.height {
+        size.width
+    } else {
+        size.height
+    };
+
+    if biggest > MAX_SIZE {
+        MAX_SIZE as f32 / biggest as f32
+    } else {
+        1.0 as f32
     }
 }
 
