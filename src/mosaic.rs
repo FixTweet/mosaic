@@ -23,6 +23,8 @@
  */
 
 use std::collections::VecDeque;
+use std::thread;
+use std::thread::JoinHandle;
 
 use image::imageops::FilterType;
 use image::RgbImage;
@@ -41,20 +43,25 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                 height: size.height,
             });
 
-            first = resize_image(
+            let mut threads: Vec<JoinHandle<RgbImage>> = vec![];
+            threads.push(threaded_resize(
                 first,
                 Size {
                     width: (size.first_width as f32 * size_mult).round() as u32,
                     height: (size.height as f32 * size_mult).round() as u32,
                 },
-            );
-            second = resize_image(
+            ));
+            threads.push(threaded_resize(
                 second,
                 Size {
                     width: (size.second_width as f32 * size_mult).round() as u32,
                     height: (size.height as f32 * size_mult).round() as u32,
                 },
-            );
+            ));
+
+            let mut results: Vec<RgbImage> = join_threads(threads);
+            second = results.pop().unwrap();
+            first = results.pop().unwrap();
 
             let mut background = create_background(
                 (size.width as f32 * size_mult).round() as u32,
@@ -92,27 +99,33 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                     height: three_horizontal.height,
                 });
 
-                first = resize_image(
+                let mut threads: Vec<JoinHandle<RgbImage>> = vec![];
+                threads.push(threaded_resize(
                     first,
                     Size {
                         width: (size.first_width as f32 * first_two_multiplier * size_mult).round() as u32,
                         height: (three_horizontal.height as f32 * size_mult).round() as u32,
                     },
-                );
-                second = resize_image(
+                ));
+                threads.push(threaded_resize(
                     second,
                     Size {
                         width: (size.second_width as f32 * first_two_multiplier * size_mult).round() as u32,
                         height: (three_horizontal.height as f32 * size_mult).round() as u32,
                     },
-                );
-                third = resize_image(
+                ));
+                threads.push(threaded_resize(
                     third,
                     Size {
                         width: (three_horizontal.second_width as f32 * size_mult).round() as u32,
                         height: (three_horizontal.height as f32 * size_mult).round() as u32,
                     },
-                );
+                ));
+
+                let mut results: Vec<RgbImage> = join_threads(threads);
+                third = results.pop().unwrap();
+                second = results.pop().unwrap();
+                first = results.pop().unwrap();
 
                 let mut background = create_background(
                     (three_horizontal.width as f32 * size_mult).round() as u32,
@@ -138,27 +151,33 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                     height: third_size.height,
                 });
 
-                first = resize_image(
+                let mut threads: Vec<JoinHandle<RgbImage>> = vec![];
+                threads.push(threaded_resize(
                     first,
                     Size {
                         width: (size.first_width as f32 * size_mult).round() as u32,
                         height: (size.height as f32 * height_multiplier * size_mult).round() as u32,
                     },
-                );
-                second = resize_image(
+                ));
+                threads.push(threaded_resize(
                     second,
                     Size {
                         width: (size.second_width as f32 * size_mult).round() as u32,
                         height: (size.height as f32 * height_multiplier * size_mult).round() as u32,
                     },
-                );
-                third = resize_image(
+                ));
+                threads.push(threaded_resize(
                     third,
                     Size {
                         width: (third_size.width as f32 * size_mult).round() as u32,
                         height: (third_size.second_height as f32 * size_mult).round() as u32,
                     },
-                );
+                ));
+
+                let mut results: Vec<RgbImage> = join_threads(threads);
+                third = results.pop().unwrap();
+                second = results.pop().unwrap();
+                first = results.pop().unwrap();
 
                 let mut background = create_background(
                     (third_size.width as f32 * size_mult).round() as u32,
@@ -195,22 +214,29 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
             let bottom_width_mult = all.second_height as f32 / bottom.height as f32;
             let size_mult = calc_multiplier(Size { width: all.width, height: all.height });
 
-            first = resize_image(first, Size {
+            let mut threads: Vec<JoinHandle<RgbImage>> = vec![];
+            threads.push(threaded_resize(first, Size {
                 width: (top.first_width as f32 * top_width_mult * size_mult).round() as u32,
                 height: (all.first_height as f32 * size_mult).round() as u32,
-            });
-            second = resize_image(second, Size {
+            }));
+            threads.push(threaded_resize(second, Size {
                 width: (top.second_width as f32 * top_width_mult * size_mult).round() as u32,
                 height: (all.first_height as f32 * size_mult).round() as u32,
-            });
-            third = resize_image(third, Size {
+            }));
+            threads.push(threaded_resize(third, Size {
                 width: (bottom.first_width as f32 * bottom_width_mult * size_mult).round() as u32,
                 height: (all.second_height as f32 * size_mult) as u32,
-            });
-            fourth = resize_image(fourth, Size {
+            }));
+            threads.push(threaded_resize(fourth, Size {
                 width: (bottom.second_width as f32 * bottom_width_mult * size_mult).round() as u32,
                 height: (all.second_height as f32 * size_mult) as u32,
-            });
+            }));
+
+            let mut results: Vec<RgbImage> = join_threads(threads);
+            fourth = results.pop().unwrap();
+            third = results.pop().unwrap();
+            second = results.pop().unwrap();
+            first = results.pop().unwrap();
 
             let mut background = create_background(
                 (all.width as f32 * size_mult) as u32,
@@ -323,6 +349,18 @@ fn resize_image(image: RgbImage, size: Size) -> RgbImage {
         );
     }
     return image;
+}
+
+fn threaded_resize(image: RgbImage, size: Size) -> JoinHandle<RgbImage> {
+    thread::spawn(move || {
+        resize_image(image, size)
+    })
+}
+
+fn join_threads(threads: Vec<JoinHandle<RgbImage>>) -> Vec<RgbImage> {
+    threads.into_iter()
+        .map(|h| h.join().unwrap())
+        .collect()
 }
 
 #[derive(Clone, Copy)]
