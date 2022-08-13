@@ -66,7 +66,7 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
             );
             image::imageops::overlay(
                 &mut background, &second,
-                (size.first_width + SPACING_SIZE) as i64, 0,
+                (first.width() + SPACING_SIZE) as i64, 0,
             );
             background
         }
