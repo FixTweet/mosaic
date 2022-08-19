@@ -123,6 +123,8 @@ pub fn image_response(img: RgbImage, encoder: ImageType) -> Result<impl IntoResp
 
 #[instrument(skip(client))]
 pub async fn fetch_image(client: &reqwest::Client, id: &str) -> Option<RgbImage> {
+    tracing::trace!("starting to download image");
+
     let start = Instant::now();
 
     let mut resp = client

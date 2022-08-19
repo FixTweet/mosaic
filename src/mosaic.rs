@@ -22,9 +22,10 @@
  * SOFTWARE.
  */
 
-use std::collections::VecDeque;
+use std::{collections::VecDeque, time::Instant};
 
 use image::{imageops::FilterType, RgbImage};
+use tracing::instrument;
 
 const SPACING_SIZE: u32 = 10;
 const MAX_SIZE: u32 = 4000;
@@ -32,28 +33,30 @@ const MAX_SIZE: u32 = 4000;
 pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
     match images.len() {
         2 => {
-            let mut first = images.pop_front().unwrap();
-            let mut second = images.pop_front().unwrap();
+            let first = images.pop_front().unwrap();
+            let second = images.pop_front().unwrap();
             let size = calc_horizontal_size(&first, &second);
             let size_mult = calc_multiplier(Size {
                 width: size.width,
                 height: size.height,
             });
 
-            first = resize_image(
-                first,
-                Size {
-                    width: (size.first_width as f32 * size_mult).round() as u32,
-                    height: (size.height as f32 * size_mult).round() as u32,
-                },
-            );
-            second = resize_image(
-                second,
-                Size {
-                    width: (size.second_width as f32 * size_mult).round() as u32,
-                    height: (size.height as f32 * size_mult).round() as u32,
-                },
-            );
+            let [first, second] = resize_images([
+                (
+                    first,
+                    Size {
+                        width: (size.first_width as f32 * size_mult).round() as u32,
+                        height: (size.height as f32 * size_mult).round() as u32,
+                    },
+                ),
+                (
+                    second,
+                    Size {
+                        width: (size.second_width as f32 * size_mult).round() as u32,
+                        height: (size.height as f32 * size_mult).round() as u32,
+                    },
+                ),
+            ]);
 
             let mut background = create_background(
                 (size.width as f32 * size_mult).round() as u32,
@@ -69,9 +72,9 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
             background
         }
         3 => {
-            let mut first = images.pop_front().unwrap();
-            let mut second = images.pop_front().unwrap();
-            let mut third = images.pop_front().unwrap();
+            let first = images.pop_front().unwrap();
+            let second = images.pop_front().unwrap();
+            let third = images.pop_front().unwrap();
             let size = calc_horizontal_size(&first, &second);
             let third_size = calc_vertical_size_raw(
                 Size {
@@ -102,29 +105,32 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                     height: three_horizontal.height,
                 });
 
-                first = resize_image(
-                    first,
-                    Size {
-                        width: (size.first_width as f32 * first_two_multiplier * size_mult).round()
-                            as u32,
-                        height: (three_horizontal.height as f32 * size_mult).round() as u32,
-                    },
-                );
-                second = resize_image(
-                    second,
-                    Size {
-                        width: (size.second_width as f32 * first_two_multiplier * size_mult).round()
-                            as u32,
-                        height: (three_horizontal.height as f32 * size_mult).round() as u32,
-                    },
-                );
-                third = resize_image(
-                    third,
-                    Size {
-                        width: (three_horizontal.second_width as f32 * size_mult).round() as u32,
-                        height: (three_horizontal.height as f32 * size_mult).round() as u32,
-                    },
-                );
+                let [first, second, third] = resize_images([
+                    (
+                        first,
+                        Size {
+                            width: (size.first_width as f32 * first_two_multiplier * size_mult)
+                                .round() as u32,
+                            height: (three_horizontal.height as f32 * size_mult).round() as u32,
+                        },
+                    ),
+                    (
+                        second,
+                        Size {
+                            width: (size.second_width as f32 * first_two_multiplier * size_mult)
+                                .round() as u32,
+                            height: (three_horizontal.height as f32 * size_mult).round() as u32,
+                        },
+                    ),
+                    (
+                        third,
+                        Size {
+                            width: (three_horizontal.second_width as f32 * size_mult).round()
+                                as u32,
+                            height: (three_horizontal.height as f32 * size_mult).round() as u32,
+                        },
+                    ),
+                ]);
 
                 let mut background = create_background(
                     (three_horizontal.width as f32 * size_mult).round() as u32,
@@ -151,27 +157,31 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                     height: third_size.height,
                 });
 
-                first = resize_image(
-                    first,
-                    Size {
-                        width: (size.first_width as f32 * size_mult).round() as u32,
-                        height: (size.height as f32 * height_multiplier * size_mult).round() as u32,
-                    },
-                );
-                second = resize_image(
-                    second,
-                    Size {
-                        width: (size.second_width as f32 * size_mult).round() as u32,
-                        height: (size.height as f32 * height_multiplier * size_mult).round() as u32,
-                    },
-                );
-                third = resize_image(
-                    third,
-                    Size {
-                        width: (third_size.width as f32 * size_mult).round() as u32,
-                        height: (third_size.second_height as f32 * size_mult).round() as u32,
-                    },
-                );
+                let [first, second, third] = resize_images([
+                    (
+                        first,
+                        Size {
+                            width: (size.first_width as f32 * size_mult).round() as u32,
+                            height: (size.height as f32 * height_multiplier * size_mult).round()
+                                as u32,
+                        },
+                    ),
+                    (
+                        second,
+                        Size {
+                            width: (size.second_width as f32 * size_mult).round() as u32,
+                            height: (size.height as f32 * height_multiplier * size_mult).round()
+                                as u32,
+                        },
+                    ),
+                    (
+                        third,
+                        Size {
+                            width: (third_size.width as f32 * size_mult).round() as u32,
+                            height: (third_size.second_height as f32 * size_mult).round() as u32,
+                        },
+                    ),
+                ]);
 
                 let mut background = create_background(
                     (third_size.width as f32 * size_mult).round() as u32,
@@ -194,10 +204,10 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
             }
         }
         4 => {
-            let mut first = images.pop_front().unwrap();
-            let mut second = images.pop_front().unwrap();
-            let mut third = images.pop_front().unwrap();
-            let mut fourth = images.pop_front().unwrap();
+            let first = images.pop_front().unwrap();
+            let second = images.pop_front().unwrap();
+            let third = images.pop_front().unwrap();
+            let fourth = images.pop_front().unwrap();
 
             let top = calc_horizontal_size(&first, &second);
             let bottom = calc_horizontal_size(&third, &fourth);
@@ -218,36 +228,39 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                 height: all.height,
             });
 
-            first = resize_image(
-                first,
-                Size {
-                    width: (top.first_width as f32 * top_width_mult * size_mult).round() as u32,
-                    height: (all.first_height as f32 * size_mult).round() as u32,
-                },
-            );
-            second = resize_image(
-                second,
-                Size {
-                    width: (top.second_width as f32 * top_width_mult * size_mult).round() as u32,
-                    height: (all.first_height as f32 * size_mult).round() as u32,
-                },
-            );
-            third = resize_image(
-                third,
-                Size {
-                    width: (bottom.first_width as f32 * bottom_width_mult * size_mult).round()
-                        as u32,
-                    height: (all.second_height as f32 * size_mult) as u32,
-                },
-            );
-            fourth = resize_image(
-                fourth,
-                Size {
-                    width: (bottom.second_width as f32 * bottom_width_mult * size_mult).round()
-                        as u32,
-                    height: (all.second_height as f32 * size_mult) as u32,
-                },
-            );
+            let [first, second, third, fourth] = resize_images([
+                (
+                    first,
+                    Size {
+                        width: (top.first_width as f32 * top_width_mult * size_mult).round() as u32,
+                        height: (all.first_height as f32 * size_mult).round() as u32,
+                    },
+                ),
+                (
+                    second,
+                    Size {
+                        width: (top.second_width as f32 * top_width_mult * size_mult).round()
+                            as u32,
+                        height: (all.first_height as f32 * size_mult).round() as u32,
+                    },
+                ),
+                (
+                    third,
+                    Size {
+                        width: (bottom.first_width as f32 * bottom_width_mult * size_mult).round()
+                            as u32,
+                        height: (all.second_height as f32 * size_mult) as u32,
+                    },
+                ),
+                (
+                    fourth,
+                    Size {
+                        width: (bottom.second_width as f32 * bottom_width_mult * size_mult).round()
+                            as u32,
+                        height: (all.second_height as f32 * size_mult) as u32,
+                    },
+                ),
+            ]);
 
             let mut background = create_background(
                 (all.width as f32 * size_mult) as u32,
@@ -350,15 +363,49 @@ fn calc_multiplier(size: Size) -> f32 {
     }
 }
 
+fn resize_images<const COUNT: usize>(images: [(RgbImage, Size); COUNT]) -> [RgbImage; COUNT] {
+    tracing::debug!("resizing {} images", COUNT);
+
+    let span = tracing::Span::current();
+
+    let images: Vec<_> = images
+        .into_iter()
+        .map(|(im, size)| {
+            let span = span.clone();
+
+            std::thread::spawn(move || {
+                let _span = span.entered();
+                resize_image(im, size)
+            })
+        })
+        .collect::<Vec<_>>() // eagerly evalulate map to spawn threads
+        .into_iter()
+        .map(|thread| thread.join().unwrap())
+        .collect();
+
+    images.try_into().unwrap()
+}
+
+#[instrument(skip(image, size))]
 fn resize_image(image: RgbImage, size: Size) -> RgbImage {
+    tracing::trace!("starting image resize");
+
+    let start = Instant::now();
+
     if image.width() != size.width && image.height() != size.height {
-        image::imageops::resize(
+        let im = image::imageops::resize(
             &image,
             size.width,
             size.height,
             FilterType::Triangle, // The original uses Lanczos3 but in practice the difference is not visible.
-        )
+        );
+
+        tracing::debug!(time = start.elapsed().as_millis(), "resized image");
+
+        im
     } else {
+        tracing::debug!("image was already acceptable size");
+
         image
     }
 }

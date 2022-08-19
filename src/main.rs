@@ -82,8 +82,10 @@ async fn handle(
         return (StatusCode::BAD_REQUEST, "No images could be found.").into_response();
     }
 
+    let span = tracing::Span::current();
+
     let mosaic_start = Instant::now();
-    let image = match tokio::task::spawn_blocking(move || mosaic(images)).await {
+    let image = match tokio::task::spawn_blocking(move || span.in_scope(|| mosaic(images))).await {
         Ok(image) => image,
         Err(err) => {
             tracing::error!("could not spawn mosaic task: {}", err);
