@@ -141,7 +141,7 @@ pub async fn fetch_image(client: &reqwest::Client, id: &str) -> Option<RgbImage>
 
     while let Some(chunk) = resp.chunk().await.ok()? {
         if buf.len() + chunk.len() > MAX_IMAGE_SIZE {
-            tracing::warn!("image was too large, skipping.");
+            tracing::warn!("image was too large, skipping");
             return None;
         }
 
