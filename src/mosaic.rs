@@ -31,7 +31,7 @@ const SPACING_SIZE: u32 = 10;
 const MAX_SIZE: u32 = 4000;
 
 pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
-    return match images.len() {
+    match images.len() {
         2 => {
             let mut first = images.pop_front().unwrap();
             let mut second = images.pop_front().unwrap();
@@ -60,13 +60,12 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                 (size.width as f32 * size_mult).round() as u32,
                 (size.height as f32 * size_mult).round() as u32,
             );
+            image::imageops::overlay(&mut background, &first, 0, 0);
             image::imageops::overlay(
-                &mut background, &first,
-                0, 0,
-            );
-            image::imageops::overlay(
-                &mut background, &second,
-                (first.width() + SPACING_SIZE) as i64, 0,
+                &mut background,
+                &second,
+                (first.width() + SPACING_SIZE) as i64,
+                0,
             );
             background
         }
@@ -76,15 +75,27 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
             let mut third = images.pop_front().unwrap();
             let size = calc_horizontal_size(&first, &second);
             let third_size = calc_vertical_size_raw(
-                Size { width: size.width, height: size.height },
-                Size { width: third.width(), height: third.height() },
+                Size {
+                    width: size.width,
+                    height: size.height,
+                },
+                Size {
+                    width: third.width(),
+                    height: third.height(),
+                },
             );
 
             // If the sizing of the 3rd image is weirdly tall then put it to the right of the other 2.
             if third_size.second_height as f32 * 1.5 > size.height as f32 {
                 let three_horizontal = calc_horizontal_size_raw(
-                    Size { width: size.width, height: size.height },
-                    Size { width: third.width(), height: third.height() },
+                    Size {
+                        width: size.width,
+                        height: size.height,
+                    },
+                    Size {
+                        width: third.width(),
+                        height: third.height(),
+                    },
                 );
                 let first_two_multiplier = three_horizontal.height as f32 / size.height as f32;
                 let size_mult = calc_multiplier(Size {
@@ -95,14 +106,16 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                 first = resize_image(
                     first,
                     Size {
-                        width: (size.first_width as f32 * first_two_multiplier * size_mult).round() as u32,
+                        width: (size.first_width as f32 * first_two_multiplier * size_mult).round()
+                            as u32,
                         height: (three_horizontal.height as f32 * size_mult).round() as u32,
                     },
                 );
                 second = resize_image(
                     second,
                     Size {
-                        width: (size.second_width as f32 * first_two_multiplier * size_mult).round() as u32,
+                        width: (size.second_width as f32 * first_two_multiplier * size_mult).round()
+                            as u32,
                         height: (three_horizontal.height as f32 * size_mult).round() as u32,
                     },
                 );
@@ -118,17 +131,18 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                     (three_horizontal.width as f32 * size_mult).round() as u32,
                     (three_horizontal.height as f32 * size_mult).round() as u32,
                 );
+                image::imageops::overlay(&mut background, &first, 0, 0);
                 image::imageops::overlay(
-                    &mut background, &first,
-                    0, 0,
+                    &mut background,
+                    &second,
+                    (first.width() + SPACING_SIZE) as i64,
+                    0,
                 );
                 image::imageops::overlay(
-                    &mut background, &second,
-                    (first.width() + SPACING_SIZE) as i64, 0,
-                );
-                image::imageops::overlay(
-                    &mut background, &third,
-                    (first.width() + SPACING_SIZE + second.width() + SPACING_SIZE) as i64, 0,
+                    &mut background,
+                    &third,
+                    (first.width() + SPACING_SIZE + second.width() + SPACING_SIZE) as i64,
+                    0,
                 );
                 background
             } else {
@@ -164,17 +178,18 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
                     (third_size.width as f32 * size_mult).round() as u32,
                     (third_size.height as f32 * size_mult).round() as u32,
                 );
+                image::imageops::overlay(&mut background, &first, 0, 0);
                 image::imageops::overlay(
-                    &mut background, &first,
-                    0, 0,
+                    &mut background,
+                    &second,
+                    (first.width() + SPACING_SIZE) as i64,
+                    0,
                 );
                 image::imageops::overlay(
-                    &mut background, &second,
-                    (first.width() + SPACING_SIZE) as i64, 0,
-                );
-                image::imageops::overlay(
-                    &mut background, &third,
-                    0, (first.height() + SPACING_SIZE) as i64,
+                    &mut background,
+                    &third,
+                    0,
+                    (first.height() + SPACING_SIZE) as i64,
                 );
                 background
             }
@@ -188,29 +203,52 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
             let top = calc_horizontal_size(&first, &second);
             let bottom = calc_horizontal_size(&third, &fourth);
             let all = calc_vertical_size_raw(
-                Size { width: top.width, height: top.height },
-                Size { width: bottom.width, height: bottom.height },
+                Size {
+                    width: top.width,
+                    height: top.height,
+                },
+                Size {
+                    width: bottom.width,
+                    height: bottom.height,
+                },
             );
             let top_width_mult = all.first_height as f32 / top.height as f32;
             let bottom_width_mult = all.second_height as f32 / bottom.height as f32;
-            let size_mult = calc_multiplier(Size { width: all.width, height: all.height });
+            let size_mult = calc_multiplier(Size {
+                width: all.width,
+                height: all.height,
+            });
 
-            first = resize_image(first, Size {
-                width: (top.first_width as f32 * top_width_mult * size_mult).round() as u32,
-                height: (all.first_height as f32 * size_mult).round() as u32,
-            });
-            second = resize_image(second, Size {
-                width: (top.second_width as f32 * top_width_mult * size_mult).round() as u32,
-                height: (all.first_height as f32 * size_mult).round() as u32,
-            });
-            third = resize_image(third, Size {
-                width: (bottom.first_width as f32 * bottom_width_mult * size_mult).round() as u32,
-                height: (all.second_height as f32 * size_mult) as u32,
-            });
-            fourth = resize_image(fourth, Size {
-                width: (bottom.second_width as f32 * bottom_width_mult * size_mult).round() as u32,
-                height: (all.second_height as f32 * size_mult) as u32,
-            });
+            first = resize_image(
+                first,
+                Size {
+                    width: (top.first_width as f32 * top_width_mult * size_mult).round() as u32,
+                    height: (all.first_height as f32 * size_mult).round() as u32,
+                },
+            );
+            second = resize_image(
+                second,
+                Size {
+                    width: (top.second_width as f32 * top_width_mult * size_mult).round() as u32,
+                    height: (all.first_height as f32 * size_mult).round() as u32,
+                },
+            );
+            third = resize_image(
+                third,
+                Size {
+                    width: (bottom.first_width as f32 * bottom_width_mult * size_mult).round()
+                        as u32,
+                    height: (all.second_height as f32 * size_mult) as u32,
+                },
+            );
+            fourth = resize_image(
+                fourth,
+                Size {
+                    width: (bottom.second_width as f32 * bottom_width_mult * size_mult).round()
+                        as u32,
+                    height: (all.second_height as f32 * size_mult) as u32,
+                },
+            );
 
             let mut background = create_background(
                 (all.width as f32 * size_mult) as u32,
@@ -219,43 +257,45 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
 
             // We also multiply the spacing by how much the width increased, this isn't ideal but
             // it's barely noticeable and it's how the original FixTweet-Mosaic code works.
+            image::imageops::overlay(&mut background, &first, 0, 0);
             image::imageops::overlay(
-                &mut background, &first,
-                0, 0,
-            );
-            image::imageops::overlay(
-                &mut background, &second,
+                &mut background,
+                &second,
                 (first.width() as f32 + SPACING_SIZE as f32 * top_width_mult) as i64,
                 0,
             );
             image::imageops::overlay(
-                &mut background, &third,
+                &mut background,
+                &third,
                 0,
                 (first.height() + SPACING_SIZE) as i64,
             );
             image::imageops::overlay(
-                &mut background, &fourth,
+                &mut background,
+                &fourth,
                 (third.width() as f32 + SPACING_SIZE as f32 * bottom_width_mult) as i64,
                 (first.height() + SPACING_SIZE) as i64,
             );
             background
         }
-        _ => panic!("impossible image length")
-    };
+        _ => panic!("impossible image length"),
+    }
 }
 
 fn create_background(width: u32, height: u32) -> RgbImage {
-    let mut img = RgbImage::new(width, height);
-    for pixel in img.enumerate_pixels_mut() {
-        *pixel.2 = image::Rgb([0, 0, 0]);
-    }
-    img
+    RgbImage::from_pixel(width, height, image::Rgb([0, 0, 0]))
 }
 
 fn calc_horizontal_size(first: &RgbImage, second: &RgbImage) -> HorizontalSize {
     calc_horizontal_size_raw(
-        Size { width: first.width(), height: first.height() },
-        Size { width: second.width(), height: second.height() },
+        Size {
+            width: first.width(),
+            height: first.height(),
+        },
+        Size {
+            width: second.width(),
+            height: second.height(),
+        },
     )
 }
 
@@ -269,8 +309,7 @@ fn calc_horizontal_size_raw(first: Size, second: Size) -> HorizontalSize {
         swapped = true
     }
 
-    let small_width =
-        (big.height as f32 / small.height as f32 * small.width as f32).round() as u32;
+    let small_width = (big.height as f32 / small.height as f32 * small.width as f32).round() as u32;
     HorizontalSize {
         width: small_width + SPACING_SIZE + big.width,
         height: big.height,
@@ -289,8 +328,7 @@ fn calc_vertical_size_raw(first: Size, second: Size) -> VerticalSize {
         swapped = true
     }
 
-    let small_height =
-        (big.width as f32 / small.width as f32 * small.height as f32).round() as u32;
+    let small_height = (big.width as f32 / small.width as f32 * small.height as f32).round() as u32;
     VerticalSize {
         width: big.width,
         height: small_height + SPACING_SIZE + big.height,
@@ -309,20 +347,21 @@ fn calc_multiplier(size: Size) -> f32 {
     if biggest > MAX_SIZE {
         MAX_SIZE as f32 / biggest as f32
     } else {
-        1.0 as f32
+        1.0
     }
 }
 
 fn resize_image(image: RgbImage, size: Size) -> RgbImage {
     if image.width() != size.width && image.height() != size.height {
-        return image::imageops::resize(
+        image::imageops::resize(
             &image,
             size.width,
             size.height,
             FilterType::Triangle, // The original uses Lanczos3 but in practice the difference is not visible.
-        );
+        )
+    } else {
+        image
     }
-    return image;
 }
 
 #[derive(Clone, Copy)]

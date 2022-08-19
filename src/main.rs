@@ -23,31 +23,38 @@
  */
 
 use std::collections::VecDeque;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
-use itertools::Itertools;
-use warp::{Filter, path, Reply};
 use warp::http::Response;
+use warp::{path, Filter, Reply};
 
 use crate::mosaic::mosaic;
 use crate::utils::{fetch_image, image_response, ImageType};
 
-mod utils;
 mod mosaic;
+mod utils;
 
-async fn handle(image_type: ImageType, _id: String, image_ids: Vec<String>) -> Response<warp::hyper::Body> {
-    let images = futures::future::join_all(image_ids.iter().map(fetch_image)).await
-        .into_iter()
-        .filter(|i| {
-            if !i.is_some() {
-                println!("Failed to download image");
-                return false;
-            }
-            return true;
-        }).map(|i| i.unwrap())
-        .collect_vec();
+async fn handle(
+    image_type: ImageType,
+    _id: String,
+    image_ids: Vec<String>,
+) -> Response<warp::hyper::Body> {
+    let client = reqwest::ClientBuilder::default()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .unwrap();
 
-    if images.len() == 0 {
+    let images: VecDeque<_> = futures::future::join_all(
+        image_ids
+            .iter()
+            .map(|image_id| fetch_image(&client, image_id)),
+    )
+    .await
+    .into_iter()
+    .filter_map(std::convert::identity)
+    .collect();
+
+    if images.is_empty() {
         return Response::builder()
             .status(500)
             .body("Failed to download all images.")
@@ -56,18 +63,29 @@ async fn handle(image_type: ImageType, _id: String, image_ids: Vec<String>) -> R
     }
 
     let start = Instant::now();
-    let image = mosaic(VecDeque::from(images));
+    let image = match tokio::task::spawn_blocking(move || mosaic(images)).await {
+        Ok(image) => image,
+        Err(_err) => {
+            return Response::builder()
+                .status(500)
+                .body("Failed to await compose image task.")
+                .unwrap()
+                .into_response();
+        }
+    };
     let size = format!("{0}x{1}", image.width(), image.height());
     let mosaic_time = start.elapsed();
 
     let encoding_start = Instant::now();
     let encoded = match image_response(image, image_type) {
         Ok(res) => res.into_response(),
-        Err(_) => return Response::builder()
-            .status(500)
-            .body("Failed to encode image")
-            .unwrap()
-            .into_response()
+        Err(_) => {
+            return Response::builder()
+                .status(500)
+                .body("Failed to encode image")
+                .unwrap()
+                .into_response()
+        }
     };
 
     println!(
@@ -85,27 +103,17 @@ async fn handle(image_type: ImageType, _id: String, image_ids: Vec<String>) -> R
 async fn main() {
     let routes = warp::get().and(
         path!(ImageType / String / String / String / String / String)
-            .then(|image_type, id, a, b, c, d|
-                handle(image_type, id, vec![a, b, c, d])
-            )
-            .or(
-                path!(ImageType / String / String / String / String)
-                    .then(|image_type, id, a, b, c|
-                        handle(image_type, id, vec![a, b, c])
-                    )
-            )
-            .or(
-                path!(ImageType / String / String / String)
-                    .then(|image_type, id, a, b|
-                        handle(image_type, id, vec![a, b])
-                    )
-            ),
+            .then(|image_type, id, a, b, c, d| handle(image_type, id, vec![a, b, c, d]))
+            .or(path!(ImageType / String / String / String / String)
+                .then(|image_type, id, a, b, c| handle(image_type, id, vec![a, b, c])))
+            .or(path!(ImageType / String / String / String)
+                .then(|image_type, id, a, b| handle(image_type, id, vec![a, b]))),
     );
 
-    let port = option_env!("PORT")
-        .unwrap_or("3030")
-        .parse::<u16>()
+    let port = std::env::var("PORT")
         .ok()
+        .unwrap_or_else(|| "3030".to_string())
+        .parse()
         .expect("PORT environment variable is not an u16.");
 
     println!("Starting fixtweet-mosaic on on 127.0.0.1:{}", port);
