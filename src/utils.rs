@@ -22,38 +22,23 @@
  * SOFTWARE.
  */
 
-use std::str::FromStr;
-
+use axum::{
+    http::{header, StatusCode},
+    response::IntoResponse,
+};
 use bytes::BytesMut;
 use const_format::formatcp;
-use image::codecs::jpeg::JpegEncoder;
-use image::codecs::png::PngEncoder;
-use image::{EncodableLayout, ImageEncoder, ImageError, RgbImage};
+use image::{
+    codecs::{jpeg::JpegEncoder, png::PngEncoder},
+    EncodableLayout, ImageEncoder, ImageError, RgbImage,
+};
 use lazy_static::lazy_static;
 use reqwest::header::{HeaderMap, HeaderValue};
-use warp::http::Response;
+
+use crate::ImageType;
 
 const FAKE_CHROME_VERSION: &'static str = "103";
 const MAX_IMAGE_SIZE: usize = 10_000_000;
-
-pub enum ImageType {
-    Webp,
-    Png,
-    Jpeg,
-}
-
-impl FromStr for ImageType {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "webp" => Ok(ImageType::Webp),
-            "png" => Ok(ImageType::Png),
-            "jpeg" => Ok(ImageType::Jpeg),
-            _ => Err(()),
-        }
-    }
-}
 
 lazy_static! {
     static ref FETCH_HEADERS: HeaderMap = {
@@ -89,7 +74,7 @@ lazy_static! {
     };
 }
 
-pub fn image_response(img: RgbImage, encoder: ImageType) -> Result<Response<Vec<u8>>, ImageError> {
+pub fn image_response(img: RgbImage, encoder: ImageType) -> Result<impl IntoResponse, ImageError> {
     let encoded = match encoder {
         ImageType::Webp => webp::Encoder::from_rgb(img.as_bytes(), img.width(), img.height())
             .encode(90.0)
@@ -126,14 +111,14 @@ pub fn image_response(img: RgbImage, encoder: ImageType) -> Result<Response<Vec<
         ImageType::Jpeg => "image/jpeg",
     };
 
-    Ok(Response::builder()
-        .status(200)
-        .header("Content-Type", content_type)
-        .body(encoded)
-        .unwrap())
+    Ok((
+        StatusCode::OK,
+        [(header::CONTENT_TYPE, content_type)],
+        encoded,
+    ))
 }
 
-pub async fn fetch_image(client: &reqwest::Client, id: &String) -> Option<RgbImage> {
+pub async fn fetch_image(client: &reqwest::Client, id: &str) -> Option<RgbImage> {
     let mut resp = client
         .get(format!(
             "https://pbs.twimg.com/media/{}?format=png&name=large",

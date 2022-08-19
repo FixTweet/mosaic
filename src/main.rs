@@ -23,27 +23,45 @@
  */
 
 use std::collections::VecDeque;
+use std::net::SocketAddr;
 use std::time::{Duration, Instant};
 
-use warp::http::Response;
-use warp::{path, Filter, Reply};
+use axum::{
+    extract::Path, http::StatusCode, response::IntoResponse, routing::get, Extension, Router,
+};
+use serde::Deserialize;
 
 use crate::mosaic::mosaic;
-use crate::utils::{fetch_image, image_response, ImageType};
+use crate::utils::{fetch_image, image_response};
 
 mod mosaic;
 mod utils;
 
-async fn handle(
+#[derive(Deserialize)]
+struct HandlePath {
     image_type: ImageType,
-    _id: String,
-    image_ids: Vec<String>,
-) -> Response<warp::hyper::Body> {
-    let client = reqwest::ClientBuilder::default()
-        .timeout(Duration::from_secs(5))
-        .build()
-        .unwrap();
+    image_ids: String,
+}
 
+#[derive(Copy, Clone, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ImageType {
+    Webp,
+    Png,
+    Jpeg,
+}
+
+async fn handle_axum(
+    path: Path<HandlePath>,
+    Extension(client): Extension<reqwest::Client>,
+) -> impl IntoResponse {
+    let image_ids: Vec<_> = path
+        .image_ids
+        .split('/')
+        .filter(|image_id| !image_id.is_empty())
+        .collect();
+
+    let start = Instant::now();
     let images: VecDeque<_> = futures::future::join_all(
         image_ids
             .iter()
@@ -53,69 +71,70 @@ async fn handle(
     .into_iter()
     .filter_map(std::convert::identity)
     .collect();
+    let download_time = start.elapsed();
 
     if images.is_empty() {
-        return Response::builder()
-            .status(500)
-            .body("Failed to download all images.")
-            .unwrap()
-            .into_response();
+        return (StatusCode::BAD_REQUEST, "No images could be downloaded").into_response();
     }
 
-    let start = Instant::now();
+    let mosaic_start = Instant::now();
     let image = match tokio::task::spawn_blocking(move || mosaic(images)).await {
         Ok(image) => image,
         Err(_err) => {
-            return Response::builder()
-                .status(500)
-                .body("Failed to await compose image task.")
-                .unwrap()
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Mosaic task failed to complete.",
+            )
                 .into_response();
         }
     };
+    let mosaic_time = mosaic_start.elapsed();
     let size = format!("{0}x{1}", image.width(), image.height());
-    let mosaic_time = start.elapsed();
 
     let encoding_start = Instant::now();
-    let encoded = match image_response(image, image_type) {
+    let encoded = match image_response(image, path.image_type) {
         Ok(res) => res.into_response(),
-        Err(_) => {
-            return Response::builder()
-                .status(500)
-                .body("Failed to encode image")
-                .unwrap()
-                .into_response()
+        Err(_err) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Image could not be encoded.",
+            )
+                .into_response();
         }
     };
 
     println!(
-        "Took {time}ms (mosaic: {mosaic}ms, encoding: {enc}ms) to process: {ids}. Image size: {size}.",
+        "Took {time}ms (download: {download}ms, mosaic: {mosaic}ms, encoding: {enc}ms) to process: {ids}. Image size: {size}.",
         time = start.elapsed().as_millis(),
+        download = download_time.as_millis(),
         mosaic = mosaic_time.as_millis(),
         ids = image_ids.join(", "),
         enc = encoding_start.elapsed().as_millis(),
         size = size,
     );
+
     encoded
 }
 
 #[tokio::main]
 async fn main() {
-    let routes = warp::get().and(
-        path!(ImageType / String / String / String / String / String)
-            .then(|image_type, id, a, b, c, d| handle(image_type, id, vec![a, b, c, d]))
-            .or(path!(ImageType / String / String / String / String)
-                .then(|image_type, id, a, b, c| handle(image_type, id, vec![a, b, c])))
-            .or(path!(ImageType / String / String / String)
-                .then(|image_type, id, a, b| handle(image_type, id, vec![a, b]))),
-    );
+    let client = reqwest::ClientBuilder::default()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .unwrap();
+
+    let app = Router::new()
+        .route("/:image_type/:tweet_id/*image_ids", get(handle_axum))
+        .layer(Extension(client));
 
     let port = std::env::var("PORT")
-        .ok()
-        .unwrap_or_else(|| "3030".to_string())
+        .unwrap_or_else(|_err| "3030".to_string())
         .parse()
-        .expect("PORT environment variable is not an u16.");
-
-    println!("Starting fixtweet-mosaic on on 127.0.0.1:{}", port);
-    warp::serve(routes).run(([127, 0, 0, 1], port)).await;
+        .expect("PORT was invalid");
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    println!("Starting fixtweet-mosaic on {}", addr);
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }

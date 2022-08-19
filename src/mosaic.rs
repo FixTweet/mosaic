@@ -24,8 +24,7 @@
 
 use std::collections::VecDeque;
 
-use image::imageops::FilterType;
-use image::RgbImage;
+use image::{imageops::FilterType, RgbImage};
 
 const SPACING_SIZE: u32 = 10;
 const MAX_SIZE: u32 = 4000;

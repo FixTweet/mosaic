@@ -2,16 +2,17 @@
 name = "fixtweet-mosaic"
 authors = ["Antonio32A"]
 license = "MIT"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1.20.1", features = ["macros", "rt-multi-thread"] }
-warp = "0.3.2"
-reqwest = { version = "0.11.11", default-features = false, features = ["rustls-tls-webpki-roots"] }
-image = "0.24.2"
-futures = "0.3.21"
-webp = "0.2.2"
-const_format = "0.2.26"
-lazy_static = "1.4.0"
+axum = "0.5.10"
 bytes = "1.2.1"
+const_format = "0.2.26"
+futures = "0.3.21"
+image = "0.24.2"
+lazy_static = "1.4.0"
+reqwest = { version = "0.11.11", default-features = false, features = ["rustls-tls-webpki-roots"] }
+serde = { version = "1.0.143", features = ["derive"] }
+tokio = { version = "1.20.1", features = ["macros", "rt-multi-thread"] }
+webp = "0.2.2"
