@@ -30,6 +30,7 @@ use axum::{
     extract::Path, http::StatusCode, response::IntoResponse, routing::get, Extension, Router,
 };
 use serde::Deserialize;
+use tracing::instrument;
 
 use crate::mosaic::mosaic;
 use crate::utils::{fetch_image, image_response};
@@ -37,13 +38,13 @@ use crate::utils::{fetch_image, image_response};
 mod mosaic;
 mod utils;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct HandlePath {
     image_type: ImageType,
     image_ids: String,
 }
 
-#[derive(Copy, Clone, Deserialize)]
+#[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ImageType {
     Webp,
@@ -51,7 +52,8 @@ pub enum ImageType {
     Jpeg,
 }
 
-async fn handle_axum(
+#[instrument(skip(path, client))]
+async fn handle(
     path: Path<HandlePath>,
     Extension(client): Extension<reqwest::Client>,
 ) -> impl IntoResponse {
@@ -61,6 +63,8 @@ async fn handle_axum(
         .filter(|image_id| !image_id.is_empty())
         .collect();
 
+    tracing::info!(image_type = ?path.image_type, "given image ids: {}", image_ids.join(", "));
+
     let start = Instant::now();
     let images: VecDeque<_> = futures::future::join_all(
         image_ids
@@ -69,18 +73,21 @@ async fn handle_axum(
     )
     .await
     .into_iter()
-    .filter_map(std::convert::identity)
+    .flatten()
     .collect();
     let download_time = start.elapsed();
 
     if images.is_empty() {
-        return (StatusCode::BAD_REQUEST, "No images could be downloaded").into_response();
+        tracing::warn!("no images were found");
+        return (StatusCode::BAD_REQUEST, "No images could be found.").into_response();
     }
 
     let mosaic_start = Instant::now();
     let image = match tokio::task::spawn_blocking(move || mosaic(images)).await {
         Ok(image) => image,
-        Err(_err) => {
+        Err(err) => {
+            tracing::error!("could not spawn mosaic task: {}", err);
+
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Mosaic task failed to complete.",
@@ -94,7 +101,9 @@ async fn handle_axum(
     let encoding_start = Instant::now();
     let encoded = match image_response(image, path.image_type) {
         Ok(res) => res.into_response(),
-        Err(_err) => {
+        Err(err) => {
+            tracing::error!("could not encode image: {}", err);
+
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Image could not be encoded.",
@@ -103,14 +112,13 @@ async fn handle_axum(
         }
     };
 
-    println!(
-        "Took {time}ms (download: {download}ms, mosaic: {mosaic}ms, encoding: {enc}ms) to process: {ids}. Image size: {size}.",
+    tracing::info!(
         time = start.elapsed().as_millis(),
         download = download_time.as_millis(),
         mosaic = mosaic_time.as_millis(),
-        ids = image_ids.join(", "),
-        enc = encoding_start.elapsed().as_millis(),
-        size = size,
+        encoding = encoding_start.elapsed().as_millis(),
+        "completed encode with final dimensions: {}",
+        size
     );
 
     encoded
@@ -118,13 +126,20 @@ async fn handle_axum(
 
 #[tokio::main]
 async fn main() {
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "info");
+    }
+
+    tracing_subscriber::fmt::init();
+
     let client = reqwest::ClientBuilder::default()
         .timeout(Duration::from_secs(5))
         .build()
         .unwrap();
 
     let app = Router::new()
-        .route("/:image_type/:tweet_id/*image_ids", get(handle_axum))
+        .route("/:image_type/:tweet_id/*image_ids", get(handle))
+        .layer(tower_http::trace::TraceLayer::new_for_http())
         .layer(Extension(client));
 
     let port = std::env::var("PORT")
@@ -132,7 +147,8 @@ async fn main() {
         .parse()
         .expect("PORT was invalid");
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
-    println!("Starting fixtweet-mosaic on {}", addr);
+
+    tracing::info!("starting fixtweet-mosaic on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await

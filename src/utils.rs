@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+use std::time::Instant;
+
 use axum::{
     http::{header, StatusCode},
     response::IntoResponse,
@@ -34,10 +36,11 @@ use image::{
 };
 use lazy_static::lazy_static;
 use reqwest::header::{HeaderMap, HeaderValue};
+use tracing::instrument;
 
 use crate::ImageType;
 
-const FAKE_CHROME_VERSION: &'static str = "103";
+const FAKE_CHROME_VERSION: &str = "103";
 const MAX_IMAGE_SIZE: usize = 10_000_000;
 
 lazy_static! {
@@ -118,7 +121,10 @@ pub fn image_response(img: RgbImage, encoder: ImageType) -> Result<impl IntoResp
     ))
 }
 
+#[instrument(skip(client))]
 pub async fn fetch_image(client: &reqwest::Client, id: &str) -> Option<RgbImage> {
+    let start = Instant::now();
+
     let mut resp = client
         .get(format!(
             "https://pbs.twimg.com/media/{}?format=png&name=large",
@@ -133,14 +139,24 @@ pub async fn fetch_image(client: &reqwest::Client, id: &str) -> Option<RgbImage>
 
     while let Some(chunk) = resp.chunk().await.ok()? {
         if buf.len() + chunk.len() > MAX_IMAGE_SIZE {
-            println!("Image was too large, skipping.");
+            tracing::warn!("image was too large, skipping.");
             return None;
         }
 
         buf.extend(chunk);
     }
 
-    image::load_from_memory(&buf)
-        .map(|img| img.into_rgb8())
-        .ok()
+    tracing::debug!(
+        bytes = buf.len(),
+        time = start.elapsed().as_millis(),
+        "downloaded image"
+    );
+
+    match image::load_from_memory(&buf) {
+        Ok(im) => Some(im.into_rgb8()),
+        Err(err) => {
+            tracing::warn!("image could not be loaded: {}", err);
+            None
+        }
+    }
 }
