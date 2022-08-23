@@ -6,10 +6,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1", features = ["full"] }
-warp = "0.3"
-reqwest = "0.11.11"
-image = "0.24.2"
+axum = "0.5.10"
+bytes = "1.2.1"
+const_format = "0.2.26"
 futures = "0.3.21"
-itertools = "0.10.2"
+image = "0.24.2"
+lazy_static = "1.4.0"
+reqwest = { version = "0.11.11", default-features = false, features = ["rustls-tls-webpki-roots"] }
+serde = { version = "1.0.143", features = ["derive"] }
+tokio = { version = "1.20.1", features = ["macros", "rt-multi-thread"] }
+tower-http = { version = "0.3.4", features = ["trace"] }
+tracing = "0.1.36"
+tracing-subscriber = "0.3.15"
 webp = "0.2.2"

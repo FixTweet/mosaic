@@ -22,45 +22,68 @@
  * SOFTWARE.
  */
 
-use std::str::FromStr;
+use std::time::Instant;
 
-use image::{EncodableLayout, ImageEncoder, ImageError, RgbImage};
-use image::codecs::jpeg::JpegEncoder;
-use image::codecs::png::PngEncoder;
-use reqwest::Client;
-use reqwest::header::HeaderMap;
-use warp::http::Response;
+use axum::{
+    http::{header, StatusCode},
+    response::IntoResponse,
+};
+use bytes::BytesMut;
+use const_format::formatcp;
+use image::{
+    codecs::{jpeg::JpegEncoder, png::PngEncoder},
+    EncodableLayout, ImageEncoder, ImageError, RgbImage,
+};
+use lazy_static::lazy_static;
+use reqwest::header::{HeaderMap, HeaderValue};
+use tracing::instrument;
 
-const FAKE_CHROME_VERSION: u16 = 103;
+use crate::ImageType;
 
-pub enum ImageType {
-    WebP,
-    PNG,
-    JPEG,
+const FAKE_CHROME_VERSION: &str = "103";
+const MAX_IMAGE_SIZE: usize = 10_000_000;
+
+lazy_static! {
+    static ref FETCH_HEADERS: HeaderMap = {
+        let mut headers = HeaderMap::new();
+
+        headers.append("sec-ch-ua", HeaderValue::from_static(formatcp!("\".Not/A)Brand\";v=\"99\", \"Google Chrome\";v=\"{version}\", \"Chromium\";v=\"{version}\"", version = FAKE_CHROME_VERSION)));
+        headers.append("DNT", HeaderValue::from_static("1"));
+        headers.append("x-twitter-client-language", HeaderValue::from_static("en"));
+        headers.append("sec-ch-ua-mobile", HeaderValue::from_static("?0"));
+        headers.append(
+            "content-type",
+            "application/x-www-form-urlencoded".parse().unwrap(),
+        );
+        headers.append("User-Agent", HeaderValue::from_static(formatcp!("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{version}.0.0.0 Safari/537.36", version = FAKE_CHROME_VERSION)));
+        headers.append("x-twitter-active-user", HeaderValue::from_static("yes"));
+        headers.append(
+            "sec-ch-ua-platform",
+            HeaderValue::from_static("\"Windows\""),
+        );
+        headers.append("Accept", HeaderValue::from_static("*/*"));
+        headers.append("Origin", HeaderValue::from_static("https://twitter.com"));
+        headers.append("Sec-Fetch-Site", HeaderValue::from_static("same-site"));
+        headers.append("Sec-Fetch-Mode", HeaderValue::from_static("cors"));
+        headers.append("Sec-Fetch-Dest", HeaderValue::from_static("empty"));
+        headers.append("Referer", HeaderValue::from_static("https://twitter.com/"));
+        headers.append(
+            "Accept-Encoding",
+            HeaderValue::from_static("gzip, deflate, br"),
+        );
+        headers.append("Accept-Language", HeaderValue::from_static("en"));
+
+        headers
+    };
 }
 
-impl FromStr for ImageType {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "webp" => Ok(ImageType::WebP),
-            "png" => Ok(ImageType::PNG),
-            "jpeg" => Ok(ImageType::JPEG),
-            _ => Err(())
-        }
-    }
-}
-
-pub fn image_response(img: RgbImage, encoder: ImageType) -> Result<Response<Vec<u8>>, ImageError> {
+pub fn image_response(img: RgbImage, encoder: ImageType) -> Result<impl IntoResponse, ImageError> {
     let encoded = match encoder {
-        ImageType::WebP => webp::Encoder::from_rgb(
-            img.as_bytes(),
-            img.width(),
-            img.height(),
-        ).encode(90.0).to_vec(),
+        ImageType::Webp => webp::Encoder::from_rgb(img.as_bytes(), img.width(), img.height())
+            .encode(90.0)
+            .to_vec(),
 
-        ImageType::PNG => {
+        ImageType::Png => {
             let mut out = vec![];
             let enc = PngEncoder::new(&mut out);
             enc.write_image(
@@ -72,7 +95,7 @@ pub fn image_response(img: RgbImage, encoder: ImageType) -> Result<Response<Vec<
             out.to_vec()
         }
 
-        ImageType::JPEG => {
+        ImageType::Jpeg => {
             let mut out = vec![];
             let enc = JpegEncoder::new(&mut out);
             enc.write_image(
@@ -86,49 +109,56 @@ pub fn image_response(img: RgbImage, encoder: ImageType) -> Result<Response<Vec<
     };
 
     let content_type = match encoder {
-        ImageType::WebP => "image/webp",
-        ImageType::PNG => "image/png",
-        ImageType::JPEG => "image/jpeg"
+        ImageType::Webp => "image/webp",
+        ImageType::Png => "image/png",
+        ImageType::Jpeg => "image/jpeg",
     };
 
-    Ok(
-        Response::builder()
-            .status(200)
-            .header("Content-Type", content_type)
-            .body(encoded)
-            .unwrap()
-    )
+    Ok((
+        StatusCode::OK,
+        [(header::CONTENT_TYPE, content_type)],
+        encoded,
+    ))
 }
 
-pub async fn fetch_image(id: &String) -> Option<RgbImage> {
-    // TODO keep this in memory
-    let client = Client::new();
-    let mut headers = HeaderMap::new();
-    headers.append("sec-ch-ua", format!("\".Not/A)Brand\";v=\"99\", \"Google Chrome\";v=\"{version}\", \"Chromium\";v=\"{version}\"", version = FAKE_CHROME_VERSION).parse().unwrap());
-    headers.append("DNT", "1".parse().unwrap());
-    headers.append("x-twitter-client-language", "en".parse().unwrap());
-    headers.append("sec-ch-ua-mobile", "?0".parse().unwrap());
-    headers.append("content-type", "application/x-www-form-urlencoded".parse().unwrap());
-    headers.append("User-Agent", format!("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{}.0.0.0 Safari/537.36", FAKE_CHROME_VERSION).parse().unwrap());
-    headers.append("x-twitter-active-user", "yes".parse().unwrap());
-    headers.append("sec-ch-ua-platform", "\"Windows\"".parse().unwrap());
-    headers.append("Accept", "*/*".parse().unwrap());
-    headers.append("Origin", "https://twitter.com".parse().unwrap());
-    headers.append("Sec-Fetch-Site", "same-site".parse().unwrap());
-    headers.append("Sec-Fetch-Mode", "cors".parse().unwrap());
-    headers.append("Sec-Fetch-Dest", "empty".parse().unwrap());
-    headers.append("Referer", "https://twitter.com/".parse().unwrap());
-    headers.append("Accept-Encoding", "gzip, deflate, br".parse().unwrap());
-    headers.append("Accept-Language", "en".parse().unwrap());
+#[instrument(skip(client))]
+pub async fn fetch_image(client: &reqwest::Client, id: &str) -> Option<RgbImage> {
+    tracing::trace!("starting to download image");
 
-    let res = client
-        .get(format!("https://pbs.twimg.com/media/{}?format=png&name=large", id))
-        .headers(headers)
+    let start = Instant::now();
+
+    let mut resp = client
+        .get(format!(
+            "https://pbs.twimg.com/media/{}?format=png&name=large",
+            id
+        ))
+        .headers(FETCH_HEADERS.clone())
         .send()
-        .await.ok()?;
-    let img = image::load_from_memory(&*res.bytes().await.ok()?);
-    return match img {
-        Ok(img) => Some(img.into_rgb8()),
-        Err(_) => None
-    };
+        .await
+        .ok()?;
+
+    let mut buf = BytesMut::new();
+
+    while let Some(chunk) = resp.chunk().await.ok()? {
+        if buf.len() + chunk.len() > MAX_IMAGE_SIZE {
+            tracing::warn!("image was too large, skipping");
+            return None;
+        }
+
+        buf.extend(chunk);
+    }
+
+    tracing::debug!(
+        bytes = buf.len(),
+        time = start.elapsed().as_millis(),
+        "downloaded image"
+    );
+
+    match image::load_from_memory(&buf) {
+        Ok(im) => Some(im.into_rgb8()),
+        Err(err) => {
+            tracing::warn!("image could not be loaded: {}", err);
+            None
+        }
+    }
 }

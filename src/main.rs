@@ -23,91 +23,136 @@
  */
 
 use std::collections::VecDeque;
-use std::time::Instant;
+use std::net::SocketAddr;
+use std::time::{Duration, Instant};
 
-use itertools::Itertools;
-use warp::{Filter, path, Reply};
-use warp::http::Response;
+use axum::{
+    extract::Path, http::StatusCode, response::IntoResponse, routing::get, Extension, Router,
+};
+use serde::Deserialize;
+use tracing::instrument;
 
 use crate::mosaic::mosaic;
-use crate::utils::{fetch_image, image_response, ImageType};
+use crate::utils::{fetch_image, image_response};
 
-mod utils;
 mod mosaic;
+mod utils;
 
-async fn handle(image_type: ImageType, _id: String, image_ids: Vec<String>) -> Response<warp::hyper::Body> {
-    let images = futures::future::join_all(image_ids.iter().map(fetch_image)).await
-        .into_iter()
-        .filter(|i| {
-            if !i.is_some() {
-                println!("Failed to download image");
-                return false;
-            }
-            return true;
-        }).map(|i| i.unwrap())
-        .collect_vec();
+#[derive(Debug, Deserialize)]
+struct HandlePath {
+    image_type: ImageType,
+    image_ids: String,
+}
 
-    if images.len() == 0 {
-        return Response::builder()
-            .status(500)
-            .body("Failed to download all images.")
-            .unwrap()
-            .into_response();
-    }
+#[derive(Copy, Clone, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ImageType {
+    Webp,
+    Png,
+    Jpeg,
+}
+
+#[instrument(skip(path, client))]
+async fn handle(
+    path: Path<HandlePath>,
+    Extension(client): Extension<reqwest::Client>,
+) -> impl IntoResponse {
+    let image_ids: Vec<_> = path
+        .image_ids
+        .split('/')
+        .filter(|image_id| !image_id.is_empty())
+        .collect();
+
+    tracing::info!(image_type = ?path.image_type, "given image ids: {}", image_ids.join(", "));
 
     let start = Instant::now();
-    let image = mosaic(VecDeque::from(images));
+    let images: VecDeque<_> = futures::future::join_all(
+        image_ids
+            .iter()
+            .map(|image_id| fetch_image(&client, image_id)),
+    )
+    .await
+    .into_iter()
+    .flatten()
+    .collect();
+    let download_time = start.elapsed();
+
+    if images.is_empty() {
+        tracing::warn!("no images were found");
+        return (StatusCode::BAD_REQUEST, "No images could be found.").into_response();
+    }
+
+    let span = tracing::Span::current();
+
+    let mosaic_start = Instant::now();
+    let image = match tokio::task::spawn_blocking(move || span.in_scope(|| mosaic(images))).await {
+        Ok(image) => image,
+        Err(err) => {
+            tracing::error!("could not spawn mosaic task: {}", err);
+
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Mosaic task failed to complete.",
+            )
+                .into_response();
+        }
+    };
+    let mosaic_time = mosaic_start.elapsed();
     let size = format!("{0}x{1}", image.width(), image.height());
-    let mosaic_time = start.elapsed();
 
     let encoding_start = Instant::now();
-    let encoded = match image_response(image, image_type) {
+    let encoded = match image_response(image, path.image_type) {
         Ok(res) => res.into_response(),
-        Err(_) => return Response::builder()
-            .status(500)
-            .body("Failed to encode image")
-            .unwrap()
-            .into_response()
+        Err(err) => {
+            tracing::error!("could not encode image: {}", err);
+
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Image could not be encoded.",
+            )
+                .into_response();
+        }
     };
 
-    println!(
-        "Took {time}ms (mosaic: {mosaic}ms, encoding: {enc}ms) to process: {ids}. Image size: {size}.",
+    tracing::info!(
         time = start.elapsed().as_millis(),
+        download = download_time.as_millis(),
         mosaic = mosaic_time.as_millis(),
-        ids = image_ids.join(", "),
-        enc = encoding_start.elapsed().as_millis(),
-        size = size,
+        encoding = encoding_start.elapsed().as_millis(),
+        "completed encode with final dimensions: {}",
+        size
     );
+
     encoded
 }
 
 #[tokio::main]
 async fn main() {
-    let routes = warp::get().and(
-        path!(ImageType / String / String / String / String / String)
-            .then(|image_type, id, a, b, c, d|
-                handle(image_type, id, vec![a, b, c, d])
-            )
-            .or(
-                path!(ImageType / String / String / String / String)
-                    .then(|image_type, id, a, b, c|
-                        handle(image_type, id, vec![a, b, c])
-                    )
-            )
-            .or(
-                path!(ImageType / String / String / String)
-                    .then(|image_type, id, a, b|
-                        handle(image_type, id, vec![a, b])
-                    )
-            ),
-    );
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "info");
+    }
 
-    let port = option_env!("PORT")
-        .unwrap_or("3030")
-        .parse::<u16>()
-        .ok()
-        .expect("PORT environment variable is not an u16.");
+    tracing_subscriber::fmt::init();
 
-    println!("Starting fixtweet-mosaic on on 127.0.0.1:{}", port);
-    warp::serve(routes).run(([127, 0, 0, 1], port)).await;
+    let client = reqwest::ClientBuilder::default()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .unwrap();
+
+    let app = Router::new()
+        .route("/:image_type/:tweet_id/*image_ids", get(handle))
+        .layer(tower_http::trace::TraceLayer::new_for_http())
+        .layer(Extension(client));
+
+    let port = std::env::var("PORT")
+        .unwrap_or_else(|_err| "3030".to_string())
+        .parse()
+        .expect("PORT was invalid");
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+
+    tracing::info!("starting fixtweet-mosaic on {}", addr);
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }
