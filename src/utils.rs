@@ -129,7 +129,7 @@ pub async fn fetch_image(client: &reqwest::Client, id: &str) -> Option<RgbImage>
 
     let mut resp = client
         .get(format!(
-            "https://pbs.twimg.com/media/{}?format=png&name=large",
+            "https://pbs.twimg.com/media/{}?format=jpg&name=large",
             id
         ))
         .headers(FETCH_HEADERS.clone())
