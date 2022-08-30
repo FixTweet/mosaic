@@ -414,22 +414,22 @@ fn build_2_mosaic(first: RgbImage, second: RgbImage) -> RgbImage {
     let best_mosaic = best_2_mosaic(first_size, second_size);
     let total_size = best_mosaic.total_size();
     let scale_factor = overall_scale_factor(total_size);
-    best_mosaic = best_mosaic.scale(scale_factor);
+    let scaled_mosaic = best_mosaic.scale(scale_factor);
 
     let [first, second] = resize_images([
         (
             first,
-            best_mosaic.image1.dimensions,
+            scaled_mosaic.image1.dimensions,
         ),
         (
             second,
-            best_mosaic.image2.dimensions,
+            scaled_mosaic.image2.dimensions,
         )
     ]);
 
-    let mut background = create_background(best_mosaic.total_size());
-    image::imageops::overlay(&mut background, &first, best_mosaic.image1.offset.width as i64, best_mosaic.image1.offset.height as i64);
-    image::imageops::overlay(&mut background, &second, best_mosaic.image2.offset.width as i64, best_mosaic.image2.offset.height as i64);
+    let mut background = create_background(scaled_mosaic.total_size());
+    image::imageops::overlay(&mut background, &first, scaled_mosaic.image1.offset.width as i64, scaled_mosaic.image1.offset.height as i64);
+    image::imageops::overlay(&mut background, &second, scaled_mosaic.image2.offset.width as i64, scaled_mosaic.image2.offset.height as i64);
     background
 }
 
@@ -497,27 +497,27 @@ fn build_3_mosaic(first: RgbImage, second: RgbImage, third: RgbImage) -> RgbImag
     let best_mosaic = best_3_mosaic(first_size, second_size, third_size);
     let total_size = best_mosaic.total_size();
     let scale_factor = overall_scale_factor(total_size);
-    best_mosaic = best_mosaic.scale(scale_factor);
+    let scaled_mosaic = best_mosaic.scale(scale_factor);
 
     let [first, second, third] = resize_images([
         (
             first,
-            best_mosaic.image1.dimensions,
+            scaled_mosaic.image1.dimensions,
         ),
         (
             second,
-            best_mosaic.image2.dimensions,
+            scaled_mosaic.image2.dimensions,
         ),
         (
             third,
-            best_mosaic.image3.dimensions,
+            scaled_mosaic.image3.dimensions,
         )
     ]);
 
-    let mut background = create_background(best_mosaic.total_size());
-    image::imageops::overlay(&mut background, &first, best_mosaic.image1.offset.width, best_mosaic.image1.offset.height);
-    image::imageops::overlay(&mut background, &second, best_mosaic.image2.offset.width, best_mosaic.image2.offset.height);
-    image::imageops::overlay(&mut background, &third, best_mosaic.image3.offset.width, best_mosaic.image3.offset.height);
+    let mut background = create_background(scaled_mosaic.total_size());
+    image::imageops::overlay(&mut background, &first, scaled_mosaic.image1.offset.width as i64, scaled_mosaic.image1.offset.height as i64);
+    image::imageops::overlay(&mut background, &second, scaled_mosaic.image2.offset.width as i64, scaled_mosaic.image2.offset.height as i64);
+    image::imageops::overlay(&mut background, &third, scaled_mosaic.image3.offset.width as i64, scaled_mosaic.image3.offset.height as i64);
     background
 }
 
@@ -731,32 +731,32 @@ fn build_4_mosaic(first: RgbImage, second: RgbImage, third: RgbImage, fourth: Rg
     let best_mosaic = best_4_mosaic(first_size, second_size, third_size, fourth_size);
     let total_size = best_mosaic.total_size();
     let scale_factor = overall_scale_factor(total_size);
-    best_mosaic = best_mosaic.scale(scale_factor);
+    let scaled_mosaic = best_mosaic.scale(scale_factor);
 
     let [first, second, third, fourth] = resize_images([
         (
             first,
-            best_mosaic.image1.dimensions,
+            scaled_mosaic.image1.dimensions,
         ),
         (
             second,
-            best_mosaic.image2.dimensions,
+            scaled_mosaic.image2.dimensions,
         ),
         (
             third,
-            best_mosaic.image3.dimensions,
+            scaled_mosaic.image3.dimensions,
         ),
         (
             fourth,
-            best_mosaic.image4.dimensions,
+            scaled_mosaic.image4.dimensions,
         ),
     ]);
 
-    let mut background = create_background(best_mosaic.total_size());
-    image::imageops::overlay(&mut background, &first, best_mosaic.image1.offset.width, best_mosaic.image1.offset.height);
-    image::imageops::overlay(&mut background, &second, best_mosaic.image2.offset.width, best_mosaic.image2.offset.height);
-    image::imageops::overlay(&mut background, &third, best_mosaic.image3.offset.width, best_mosaic.image3.offset.height);
-    image::imageops::overlay(&mut background, &fourth, best_mosaic.image4.offset.width, best_mosaic.image4.offset.height);
+    let mut background = create_background(scaled_mosaic.total_size());
+    image::imageops::overlay(&mut background, &first, scaled_mosaic.image1.offset.width as i64, scaled_mosaic.image1.offset.height as i64);
+    image::imageops::overlay(&mut background, &second, scaled_mosaic.image2.offset.width as i64, scaled_mosaic.image2.offset.height as i64);
+    image::imageops::overlay(&mut background, &third, scaled_mosaic.image3.offset.width as i64, scaled_mosaic.image3.offset.height as i64);
+    image::imageops::overlay(&mut background, &fourth, scaled_mosaic.image4.offset.width as i64, scaled_mosaic.image4.offset.height as i64);
     background
 }
 
@@ -836,20 +836,20 @@ fn two_rows_of_two_4_mosaic(first: Size, second: Size, third: Size, fourth: Size
     let first_row = left_right_2_mosaic(first, second);
     let second_row = left_right_2_mosaic(third, fourth);
     let scale_factor = second_row.total_size().width as f32 / first_row.total_size().width as f32;
-    second_row = second_row.scale(scale_factor).add_height(first_row.total_size().height + SPACING_SIZE);
+    let second_row_moved = second_row.scale(scale_factor).add_height(first_row.total_size().height + SPACING_SIZE);
 
     Mosaic4ImageDims {
         image1: first_row.image1,
         image2: first_row.image2,
-        image3: second_row.image1,
-        image4: second_row.image2,
+        image3: second_row_moved.image1,
+        image4: second_row_moved.image2,
     }
 }
 
 fn two_rows_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let second_row = three_columns_3_mosaic(second, third, fourth);
-    image1_dims = scale_width_dimension(first, second_row.total_size().width);
-    second_row = second_row.add_height(image1_dims.height + SPACING_SIZE);
+    let image1_dims = scale_width_dimension(first, second_row.total_size().width);
+    let second_row_moved = second_row.add_height(image1_dims.height + SPACING_SIZE);
 
 
     Mosaic4ImageDims {
@@ -860,15 +860,15 @@ fn two_rows_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth: S
             },
             dimensions: image1_dims,
         },
-        image2: second_row.image1,
-        image3: second_row.image2,
-        image4: second_row.image3,
+        image2: second_row_moved.image1,
+        image3: second_row_moved.image2,
+        image4: second_row_moved.image3,
     }
 }
 
 fn two_rows_three_one_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let first_row = three_columns_3_mosaic(first, second, third);
-    image4_dims = scale_width_dimension(fourth, first_row.total_size().width);
+    let image4_dims = scale_width_dimension(fourth, first_row.total_size().width);
 
     Mosaic4ImageDims {
         image1: first_row.image1,
@@ -888,20 +888,20 @@ fn two_columns_of_two_4_mosaic(first: Size, second: Size, third: Size, fourth: S
     let first_col = top_bottom_2_mosaic(first, second);
     let second_col = top_bottom_2_mosaic(third, fourth);
     let scale_factor = second_col.total_size().height as f32 / first_col.total_size().height as f32;
-    second_col = second_col.scale(scale_factor).add_width(first_col.total_size().width + SPACING_SIZE);
+    let second_col_moved = second_col.scale(scale_factor).add_width(first_col.total_size().width + SPACING_SIZE);
 
     Mosaic4ImageDims {
         image1: first_col.image1,
         image2: first_col.image2,
-        image3: second_col.image1,
-        image4: second_col.image2,
+        image3: second_col_moved.image1,
+        image4: second_col_moved.image2,
     }
 }
 
 fn two_columns_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let second_col = three_rows_3_mosaic(second, third, fourth);
-    image1_dims = scale_height_dimension(first, second_col.total_size().height);
-    second_col = second_col.add_width(image1_dims.width + SPACING_SIZE);
+    let image1_dims = scale_height_dimension(first, second_col.total_size().height);
+    let second_col_moved = second_col.add_width(image1_dims.width + SPACING_SIZE);
 
     Mosaic4ImageDims {
         image1: ImageOffset {
@@ -911,15 +911,15 @@ fn two_columns_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth
             },
             dimensions: image1_dims,
         },
-        image2: second_col.image1,
-        image3: second_col.image2,
-        image4: second_col.image3,
+        image2: second_col_moved.image1,
+        image3: second_col_moved.image2,
+        image4: second_col_moved.image3,
     }
 }
 
 fn two_columns_three_one_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let first_col = three_rows_3_mosaic(first, second, third);
-    image4_dims = scale_height_dimension(fourth, first_col.total_size().height);
+    let image4_dims = scale_height_dimension(fourth, first_col.total_size().height);
 
     Mosaic4ImageDims {
         image1: first_row.image1,
@@ -1000,13 +1000,13 @@ fn three_rows_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size)
         },
         dimensions: scale_width_dimension(second, third_row.total_size().width),
     };
-    third_row = third_row.add_height(image2_offset.total_height() + SPACING_SIZE);
+    let third_row_moved = third_row.add_height(image2_offset.total_height() + SPACING_SIZE);
 
     Mosaic4ImageDims {
         image1: image1_offset,
         image2: image2_offset,
-        image3: third_row.image1,
-        image4: third_row.image2,
+        image3: third_row_moved.image1,
+        image4: third_row_moved.image2,
     }
 }
 
@@ -1036,25 +1036,25 @@ fn three_columns_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Si
 
 fn three_columns_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let second_col = top_bottom_2_mosaic(second, third);
-    image1_offset = ImageOffset {
+    let image1_offset = ImageOffset {
         offset: Size {
             width: 0,
             height: 0,
         },
         dimensions: scale_height_dimension(first, second_col.total_size().height),
     };
-    second_col = second_col.add_width(image1_offset.total_width() + SPACING_SIZE);
+    let second_col_moved = second_col.add_width(image1_offset.total_width() + SPACING_SIZE);
 
     Mosaic4ImageDims {
         image1: image1_offset,
-        image2: second_col.image1,
-        image3: second_col.image2,
+        image2: second_col_moved.image1,
+        image3: second_col_moved.image2,
         image4: ImageOffset {
             offset: Size {
-                width: second_col.total_size().width + SPACING_SIZE,
+                width: second_col_moved.total_size().width + SPACING_SIZE,
                 height: 0,
             },
-            dimensions: scale_height_dimension(fourth, second_col.total_size().height),
+            dimensions: scale_height_dimension(fourth, second_col_moved.total_size().height),
         },
     }
 }
@@ -1075,12 +1075,12 @@ fn three_columns_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Si
         },
         dimensions: scale_height_dimension(second, third_col.total_size().height),
     };
-    third_col = third_col.add_width(image2_offset.total_width() + SPACING_SIZE);
+    let third_col_moved = third_col.add_width(image2_offset.total_width() + SPACING_SIZE);
 
     Mosaic4ImageDims {
         image1: image1_offset,
         image2: image2_offset,
-        image3: third_col.image1,
-        image4: third_col.image2,
+        image3: third_col_moved.image1,
+        image4: third_col_moved.image2,
     }
 }
