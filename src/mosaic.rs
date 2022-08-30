@@ -148,7 +148,7 @@ fn overall_scale_factor(size: Size) -> f32 {
     };
 
     if biggest > MAX_SIZE {
-        MAX_SIZE as f32 / biggest as f32
+        biggest as f32 / MAX_SIZE as f32
     } else {
         1.0
     }
