@@ -479,7 +479,7 @@ fn best_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
     let left_left_right = left_left_right_3_mosaic(first, second, third);
     let top_bottom_bottom = top_bottom_bottom_3_mosaic(first, second, third);
     let three_rows = three_rows_3_mosaic(first, second, third);
-    most_square_mosaic([one_row, top_top_bottom, left_left_right, left_right_right, top_bottom_bottom, one_column]);
+    most_square_mosaic([three_columns, top_top_bottom, left_left_right, left_right_right, top_bottom_bottom, three_rows]);
 }
 
 fn build_3_mosaic(first: RgbImage, second: RgbImage, third: RgbImage) -> RgbImage {
