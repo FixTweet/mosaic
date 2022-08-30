@@ -35,20 +35,20 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
         2 => {
             let first = images.pop_front().unwrap();
             let second = images.pop_front().unwrap();
-            build_2_mosaic(first, second);
+            return build_2_mosaic(first, second)
         }
         3 => {
             let first = images.pop_front().unwrap();
             let second = images.pop_front().unwrap();
             let third = images.pop_front().unwrap();
-            build_3_mosaic(first, second, third);
+            return build_3_mosaic(first, second, third)
         }
         4 => {
             let first = images.pop_front().unwrap();
             let second = images.pop_front().unwrap();
             let third = images.pop_front().unwrap();
             let fourth = images.pop_front().unwrap();
-            build_4_mosaic(first, second, third, fourth);
+            return build_4_mosaic(first, second, third, fourth)
         }
         _ => panic!("impossible image length"),
     }
