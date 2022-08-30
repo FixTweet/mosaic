@@ -943,14 +943,151 @@ fn two_columns_three_one_4_mosaic(first: Size, second: Size, third: Size, fourth
 }
 
 fn three_rows_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+    let first_row = left_right_2_mosaic(first, second);
+    let image3_offset = ImageOffset {
+        offset: Size {
+            width: 0,
+            height: first_row.total_size().height + SPACING_SIZE,
+        },
+        dimensions: scale_width_dimension(third, first_row.total_size().width),
+    };
+
+    Mosaic4ImageDims {
+        image1: first_row.image1,
+        image2: first_row.image2,
+        image3: image3_offset,
+        image4: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: image3_offset.total_height(),
+            },
+            dimensions: scale_width_dimension(fourth, first_row.total_size().width),
+        }
+    }
 }
+
 fn three_rows_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+    let second_row = left_right_2_mosaic(second, third);
+    image1_dims = scale_width_dimension(first, second_row.total_size().width);
+    second_row.add_height(image1_dims.total_height() + SPACING_SIZE);
+
+    Mosaic4ImageDims {
+        image1: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: 0,
+            },
+            dimensions: image1_dims,
+        },
+        image2: second_row.image1,
+        image3: second_row.image2,
+        image4: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: second_row.total_size().height + SPACING_SIZE,
+            },
+            dimensions: scale_width_dimension(fourth, second.total_size().width),
+        },
+    }
 }
+
 fn three_rows_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+    let third_row = left_right_2_mosaic(third, fourth);
+    image1_offset = ImageOffset {
+        offset: Size {
+            width: 0,
+            height: 0,
+        },
+        dimensions: scale_width_dimension(first, third_row.total_size().width),
+    };
+    image2_offset = ImageOffset {
+        offset: Size {
+            width: 0,
+            height: image1_offset.total_height() + SPACING_SIZE,
+        },
+        dimensions: scale_width_dimension(second, third_row.total_size().width),
+    };
+    third_row = third_row.add_height(image2_offset.total_height() + SPACING_SIZE);
+
+    Mosaic4ImageDims {
+        image1: image1_offset,
+        image2: image2_offset,
+        image3: third_row.image1,
+        image4: third_row.image2,
+    }
 }
+
 fn three_columns_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+    let first_col = top_bottom_2_mosaic(first, second);
+    let image3_offset = ImageOffset {
+        offset: Size {
+            width: first_col.total_size().width + SPACING_SIZE,
+            height: 0,
+        },
+        dimensions: scale_height_dimension(third, first_col.total_size().height),
+    };
+
+    Mosaic4ImageDims {
+        image1: first_col.image1,
+        image2: first_col.image2,
+        image3: image3_offset,
+        image4: ImageOffset {
+            offset: Size {
+                width: image3_offset.total_width() + SPACING_SIZE,
+                height: 0,
+            },
+            dimensions: scale_height_dimension(fourth, first_col.total_size().height),
+        },
+    }
 }
+
 fn three_columns_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+    let second_col = top_bottom_2_mosaic(second, third);
+    image1_offset = ImageOffset {
+        offset: Size {
+            width: 0,
+            height: 0,
+        },
+        dimensions: scale_height_dimension(first, second_col.total_size().height),
+    };
+    second_col = second_col.add_width(image1_offset.total_width() + SPACING_SIZE)
+
+    Mosaic4ImageDims {
+        image1: image1_offset,
+        image2: second_col.image1,
+        image3: second_col.image2,
+        image4: ImageOffset {
+            offset: Size {
+                width: second_col.total_size().width + SPACING_SIZE,
+                height: 0,
+            },
+            dimensions: scale_height_dimension(fourth, second_col.total_size().height),
+        },
+    }
 }
+
 fn three_columns_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+    let third_col = top_bottom_2_mosaic(third, fourth);
+    let image1_offset = ImageOffset {
+        offset: Size {
+            width: 0,
+            height: 0,
+        },
+        dimensions: scale_height_dimension(first, third_col.total_size().height),
+    };
+    let image2_offset = ImageOffset {
+        offset: Size {
+            width: image1_offset.total_width() + SPACING_SIZE,
+            height: 0,
+        },
+        dimensions: scale_height_dimension(second, third_col.total_size().height),
+    };
+    third_col = third_col.add_width(image2_offset.total_width() + SPACING_SIZE);
+
+    Mosaic4ImageDims {
+        image1: image1_offset,
+        image2: image2_offset,
+        image3: third_col.image1,
+        image4: third_col.image2,
+    }
 }
