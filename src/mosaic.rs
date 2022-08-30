@@ -638,8 +638,21 @@ fn three_rows_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
 
 fn best_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
     let four_columns = four_columns_4_mosaic(first, second, third, fourth);
+    let four_rows = four_rows_4_mosaic(first, second, third, fourth);
+    let two_rows_of_two = 0;
+    let two_rows_one_three = 0;
+    let two_rows_three_one = 0;
+    let two_columns_of_two = 0;
+    let two_columns_one_three = 0;
+    let two_columns_three_one = 0;
+    let three_rows_211 = 0;
+    let three_rows_121 = 0;
+    let three_rows_112 = 0;
+    let three_columns_211 = 0;
+    let three_columns_121 = 0;
+    let three_columns_112 = 0;
     // TODO: Add remaining 4-image mosaic implementations
-    most_square_mosaic([four_columns]);
+    most_square_mosaic([four_columns, four_rows]);
 }
 
 fn build_4_mosaic(first: RgbImage, second: RgbImage, third: RgbImage, fourth: RgbImage) -> RgbImage {
@@ -725,6 +738,42 @@ fn four_columns_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -
                 height: 0,
             },
             dimensions: scale_height_dimension(fourth, first.height),
+        },
+    }
+}
+
+fn four_rows_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+    let image2_offset = ImageOffset {
+        offset: Size {
+            width: 0,
+            height: first.height + SPACING_SIZE,
+        },
+        dimensions: scale_width_dimension(second, first.width),
+    };
+    let image3_offset = ImageOffset {
+        offset: Size {
+            width: 0,
+            height: image2_offset.total_height() + SPACING_SIZE,
+        },
+        dimensions: scale_width_dimension(third, first.width)
+    };
+
+    Mosaic4Dims {
+        image1: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: 0,
+            },
+            dimensions: first,
+        },
+        image2: image2_offset,
+        image3: image3_offset,
+        image4: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: image3_offset.total_height() + SPACING_SIZE,
+            },
+            dimensions: scale_width_dimension(fourth, first.width),
         },
     }
 }
