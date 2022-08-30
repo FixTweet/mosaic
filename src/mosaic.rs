@@ -41,7 +41,7 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
             let first = images.pop_front().unwrap();
             let second = images.pop_front().unwrap();
             let third = images.pop_front().unwrap();
-            mosaic_3(first, second, third);
+            build_3_mosaic(first, second, third);
         }
         4 => {
             let first = images.pop_front().unwrap();
@@ -52,136 +52,6 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
 
         }
         _ => panic!("impossible image length"),
-    }
-}
-
-fn mosaic_3(first: RgbMosaic, second: RgbMosaic, third: RgbMosaic) -> RgbImage {
-    let size = calc_horizontal_size(&first, &second);
-    let third_size = calc_vertical_size_raw(
-        Size {
-            width: size.width,
-            height: size.height,
-        },
-        Size {
-            width: third.width(),
-            height: third.height(),
-        },
-    );
-
-    // If the sizing of the 3rd image is weirdly tall then put it to the right of the other 2.
-    if third_size.second_height as f32 * 1.5 > size.height as f32 {
-        let three_horizontal = calc_horizontal_size_raw(
-            Size {
-                width: size.width,
-                height: size.height,
-            },
-            Size {
-                width: third.width(),
-                height: third.height(),
-            },
-        );
-        let first_two_multiplier = three_horizontal.height as f32 / size.height as f32;
-        let size_mult = calc_multiplier(Size {
-            width: three_horizontal.width,
-            height: three_horizontal.height,
-        });
-
-        let [first, second, third] = resize_images([
-            (
-                first,
-                Size {
-                    width: (size.first_width as f32 * first_two_multiplier * size_mult)
-                        .round() as u32,
-                    height: (three_horizontal.height as f32 * size_mult).round() as u32,
-                },
-            ),
-            (
-                second,
-                Size {
-                    width: (size.second_width as f32 * first_two_multiplier * size_mult)
-                        .round() as u32,
-                    height: (three_horizontal.height as f32 * size_mult).round() as u32,
-                },
-            ),
-            (
-                third,
-                Size {
-                    width: (three_horizontal.second_width as f32 * size_mult).round()
-                        as u32,
-                    height: (three_horizontal.height as f32 * size_mult).round() as u32,
-                },
-            ),
-        ]);
-
-        let mut background = create_background(
-            (three_horizontal.width as f32 * size_mult).round() as u32,
-            (three_horizontal.height as f32 * size_mult).round() as u32,
-        );
-        image::imageops::overlay(&mut background, &first, 0, 0);
-        image::imageops::overlay(
-            &mut background,
-            &second,
-            (first.width() + SPACING_SIZE) as i64,
-            0,
-        );
-        image::imageops::overlay(
-            &mut background,
-            &third,
-            (first.width() + SPACING_SIZE + second.width() + SPACING_SIZE) as i64,
-            0,
-        );
-        background
-    } else {
-        let height_multiplier = third_size.width as f32 / size.width as f32;
-        let size_mult = calc_multiplier(Size {
-            width: third_size.width,
-            height: third_size.height,
-        });
-
-        let [first, second, third] = resize_images([
-            (
-                first,
-                Size {
-                    width: (size.first_width as f32 * size_mult).round() as u32,
-                    height: (size.height as f32 * height_multiplier * size_mult).round()
-                        as u32,
-                },
-            ),
-            (
-                second,
-                Size {
-                    width: (size.second_width as f32 * size_mult).round() as u32,
-                    height: (size.height as f32 * height_multiplier * size_mult).round()
-                        as u32,
-                },
-            ),
-            (
-                third,
-                Size {
-                    width: (third_size.width as f32 * size_mult).round() as u32,
-                    height: (third_size.second_height as f32 * size_mult).round() as u32,
-                },
-            ),
-        ]);
-
-        let mut background = create_background(
-            (third_size.width as f32 * size_mult).round() as u32,
-            (third_size.height as f32 * size_mult).round() as u32,
-        );
-        image::imageops::overlay(&mut background, &first, 0, 0);
-        image::imageops::overlay(
-            &mut background,
-            &second,
-            (first.width() + SPACING_SIZE) as i64,
-            0,
-        );
-        image::imageops::overlay(
-            &mut background,
-            &third,
-            0,
-            (first.height() + SPACING_SIZE) as i64,
-        );
-        background
     }
 }
 
@@ -589,10 +459,7 @@ fn left_right_2_mosaic(first: Size, second: Size) -> Mosaic2Dims {
                 width: 0,
                 height: 0,
             },
-            dimensions: Size {
-                width: first.width,
-                height: first.height,
-            },
+            dimensions: first,
         },
         image2: ImageOffset {
             offset: Size {
@@ -611,10 +478,7 @@ fn top_bottom_2_mosaic(first: Size, second: Size) -> Mosaic2Dims {
                 width: 0,
                 height: 0,
             },
-            dimensions: Size {
-                width: first.width,
-                height: first.height,
-            },
+            dimensions: first,
         },
         image2: ImageOffset {
             offset: Size {
@@ -622,6 +486,115 @@ fn top_bottom_2_mosaic(first: Size, second: Size) -> Mosaic2Dims {
                 height: first.height + SPACING_SIZE,
             },
             dimensions: scale_width_dimension(second, first.width),
+        },
+    }
+}
+
+fn best_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+    let three_columns = three_columns_3_mosaic(first, second, third);
+    let top_top_bottom = top_top_bottom_3_mosaic(first, second, third);
+    let left_right_right = left_right_right_3_mosaic(first, second, third);
+    let left_left_right = left_left_right_3_mosaic(first, second, third);
+    let top_bottom_bottom = top_bottom_bottom_3_mosaic(first, second, third);
+    let three_rows = three_rows_3_mosaic(first, second, third);
+    most_square_mosaic([one_row, top_top_bottom, left_left_right, left_right_right, top_bottom_bottom, one_column]);
+}
+
+fn build_3_mosaic(first: RgbImage, second: RgbImage, third: RgbImage) -> RgbImage {
+    let first_size = Size {
+        width: first.width(),
+        height: first.height(),
+    }
+    let second_size = Size {
+        width: second.width(),
+        height: second.height(),
+    }
+    let third_size = Size {
+        width: third.width(),
+        height: third.height(),
+    }
+    let best_mosaic = best_3_mosaic(first_size, second_size, third_size);
+    let total_size = best_mosaic.total_size();
+    let scale_factor = overall_scale_factor(total_size);
+    best_mosaic = best_mosaic.scale(scale_factor);
+
+    let [first, second, third] = resize_images([
+        (
+            first,
+            best_mosaic.image1.dimensions,
+        ),
+        (
+            second,
+            best_mosaic.image2.dimensions,
+        ),
+        (
+            third,
+            best_mosaic.image3.dimensions,
+        )
+    ]);
+
+    let mut background = create_background(
+        best_mosaic.total_size()
+    );
+    let image::imageops::overlay(&mut background, &first, best_mosaic.image1.offset.width, best_mosaic.image1.offset.height);
+    let image::imageops::overlay(&mut background, &second, best_mosaic.image2.offset.width, best_mosaic.image2.offset.height);
+    let image::imageops::overlay(&mut background, &third, best_mosaic.image3.offset.width, best_mosaic.image3.offset.height);
+    background
+}
+
+fn three_columns_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+    let image2_offset = ImageOffset {
+        offset: Size {
+            width: first.width + SPACING_SIZE,
+            height: 0
+        },
+        dimensions: scale_height_dimension(second, first.height),
+    };
+
+    Mosaic3Dims {
+        image1: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: 0,
+            },
+            dimensions: first,
+        },
+        image2: image2_offset,
+        image3: ImageOffset {
+            offset: Size {
+                width: image2_offset.offset.width + image2_offset.dimensions.width + SPACING_SIZE,
+                height: 0
+            },
+            dimensions: scale_height_dimension(third, first.height),
+        },
+    }
+}
+
+fn top_top_bottom_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+    let image2_offset = ImageOffset {
+        offset: Size {
+            width: first.width + SPACING_SIZE,
+            height: 0
+        },
+        dimensions: scale_height_dimension(second, first.height)
+    };
+    let total_width = image2_offset.offset.width + image2_offset.dimensions.width;
+
+    Mosaic3Dims {
+        image1: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: 0,
+            },
+            dimensions: first,
+        },
+        image2: image2_offset,
+        image3: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: first.height + SPACING_SIZE,
+            },
+            dimensions: scale_width_dimension(third, total_width),
         },
     }
 }
