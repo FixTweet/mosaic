@@ -196,9 +196,9 @@ impl ImageOffset {
 
 trait MosaicDims {
     fn total_size(&self) -> Size;
-    fn scale(&self, scale_factor: f32) -> dyn MosaicDims;
-    fn add_height(&self, height: u32) -> dyn MosaicDims;
-    fn add_width(&self, width: u32) -> dyn MosaicDims;
+    fn scale(&self, scale_factor: f32) -> Self;
+    fn add_height(&self, height: u32) -> Self;
+    fn add_width(&self, width: u32) -> Self;
 }
 
 pub struct Mosaic2ImageDims {
@@ -785,7 +785,6 @@ fn two_rows_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth: S
     let image1_dims = scale_width_dimension(first, second_row.total_size().width);
     let second_row_moved = second_row.add_height(image1_dims.height + SPACING_SIZE);
 
-
     Mosaic4ImageDims {
         image1: ImageOffset {
             offset: Size {
@@ -895,8 +894,8 @@ fn three_rows_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Size)
 
 fn three_rows_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let second_row = left_right_2_mosaic(second, third);
-    image1_dims = scale_width_dimension(first, second_row.total_size().width);
-    second_row.add_height(image1_dims.total_height() + SPACING_SIZE);
+    let image1_dims = scale_width_dimension(first, second_row.total_size().width);
+    let second_row_moved = second_row.add_height(image1_dims.total_height() + SPACING_SIZE);
 
     Mosaic4ImageDims {
         image1: ImageOffset {
@@ -906,28 +905,28 @@ fn three_rows_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Size)
             },
             dimensions: image1_dims,
         },
-        image2: second_row.image1,
-        image3: second_row.image2,
+        image2: second_row_moved.image1,
+        image3: second_row_moved.image2,
         image4: ImageOffset {
             offset: Size {
                 width: 0,
-                height: second_row.total_size().height + SPACING_SIZE,
+                height: second_row_moved.total_size().height + SPACING_SIZE,
             },
-            dimensions: scale_width_dimension(fourth, second.total_size().width),
+            dimensions: scale_width_dimension(fourth, second_row_moved.total_size().width),
         },
     }
 }
 
 fn three_rows_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let third_row = left_right_2_mosaic(third, fourth);
-    image1_offset = ImageOffset {
+    let image1_offset = ImageOffset {
         offset: Size {
             width: 0,
             height: 0,
         },
         dimensions: scale_width_dimension(first, third_row.total_size().width),
     };
-    image2_offset = ImageOffset {
+    let image2_offset = ImageOffset {
         offset: Size {
             width: 0,
             height: image1_offset.total_height() + SPACING_SIZE,
