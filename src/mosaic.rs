@@ -380,7 +380,7 @@ pub struct VerticalSize {
     pub second_height: u32,
 }
 
-fn unsquareness(mosaic: dyn MosaicDims) -> f32 {
+fn unsquareness<T: MosaicDims>(mosaic: T) -> f32 {
     let total_size = mosaic.total_size();
     let ratio = if total_size.width < total_size.height {
         total_size.height as f32 / total_size.width as f32
@@ -390,7 +390,7 @@ fn unsquareness(mosaic: dyn MosaicDims) -> f32 {
     ratio
 }
 
-fn most_square_mosaic(mosaics: Vec<dyn MosaicDims>) -> dyn MosaicDims {
+fn most_square_mosaic<T: MosaicDims>(mosaics: &[T]) -> T {
     mosaics.iter().min_by_key(|mosaic| {
         unsquareness(mosaic)
     })
@@ -399,7 +399,7 @@ fn most_square_mosaic(mosaics: Vec<dyn MosaicDims>) -> dyn MosaicDims {
 fn best_2_mosaic(first: Size, second: Size) -> Mosaic2ImageDims {
     let top_bottom = top_bottom_2_mosaic(first, second);
     let left_right = left_right_2_mosaic(first, second);
-    most_square_mosaic([top_bottom, left_right])
+    return most_square_mosaic(&[top_bottom, left_right]);
 }
 
 fn build_2_mosaic(first: RgbImage, second: RgbImage) -> RgbImage {
@@ -478,7 +478,7 @@ fn best_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3ImageDims {
     let left_left_right = left_left_right_3_mosaic(first, second, third);
     let top_bottom_bottom = top_bottom_bottom_3_mosaic(first, second, third);
     let three_rows = three_rows_3_mosaic(first, second, third);
-    most_square_mosaic([three_columns, top_top_bottom, left_left_right, left_right_right, top_bottom_bottom, three_rows]);
+    return most_square_mosaic(&[three_columns, top_top_bottom, left_left_right, left_right_right, top_bottom_bottom, three_rows]);
 }
 
 fn build_3_mosaic(first: RgbImage, second: RgbImage, third: RgbImage) -> RgbImage {
@@ -708,7 +708,7 @@ fn best_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic
     let three_columns_211 = three_columns_211_4_mosaic(first, second, third, fourth);
     let three_columns_121 = three_columns_121_4_mosaic(first, second, third, fourth);
     let three_columns_112 = three_columns_112_4_mosaic(first, second, third, fourth);
-    return most_square_mosaic([four_columns, four_rows, two_rows_of_two, two_rows_one_three, two_rows_three_one, two_columns_of_two, two_columns_one_three, two_columns_three_one, three_rows_211, three_rows_121, three_rows_112, three_columns_211, three_columns_121, three_columns_112]);
+    return most_square_mosaic(&[four_columns, four_rows, two_rows_of_two, two_rows_one_three, two_rows_three_one, two_columns_of_two, two_columns_one_three, two_columns_three_one, three_rows_211, three_rows_121, three_rows_112, three_columns_211, three_columns_121, three_columns_112]);
 }
 
 fn build_4_mosaic(first: RgbImage, second: RgbImage, third: RgbImage, fourth: RgbImage) -> RgbImage {
