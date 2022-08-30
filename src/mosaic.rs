@@ -127,16 +127,16 @@ fn calc_multiplier(size: Size) -> f32 {
 fn scale_height_dimension(image_size: Size, other_height: u32) -> Size {
     let scale_factor = image_size.height as f32 / other_height as f32;
     Size {
-        (image_size.width as f32 / scale_factor).round() as u32,
-        image_size.height,
+        width: (image_size.width as f32 / scale_factor).round() as u32,
+        height: other_height,
     }
 }
 
 fn scale_width_dimension(image_size: Size, other_width: u32) -> Size {
     let scale_factor = image_size.width as f32 / other_width as f32;
     Size {
-        image_size.width,
-        (image_size.height as f32 / scale_factor).round() as u32,
+        width: other_width,
+        height: (image_size.height as f32 / scale_factor).round() as u32,
     }
 }
 
