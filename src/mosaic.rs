@@ -54,8 +54,8 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
     }
 }
 
-fn create_background(width: u32, height: u32) -> RgbImage {
-    RgbImage::from_pixel(width, height, image::Rgb([0, 0, 0]))
+fn create_background(size: Size) -> RgbImage {
+    RgbImage::from_pixel(size.width, size.height, image::Rgb([0, 0, 0]))
 }
 
 fn calc_horizontal_size(first: &RgbImage, second: &RgbImage) -> HorizontalSize {
@@ -428,9 +428,7 @@ fn build_2_mosaic(first: RgbImage, second: RgbImage) -> RgbImage {
         )
     ]);
 
-    let mut background = create_background(
-        best_mosaic.total_size()
-    );
+    let mut background = create_background(best_mosaic.total_size());
     let image::imageops::overlay(&mut background, &first, best_mosaic.image1.offset.width, best_mosaic.image1.offset.height);
     let image::imageops::overlay(&mut background, &second, best_mosaic.image2.offset.width, best_mosaic.image2.offset.height);
     background
@@ -517,9 +515,7 @@ fn build_3_mosaic(first: RgbImage, second: RgbImage, third: RgbImage) -> RgbImag
         )
     ]);
 
-    let mut background = create_background(
-        best_mosaic.total_size()
-    );
+    let mut background = create_background(best_mosaic.total_size());
     let image::imageops::overlay(&mut background, &first, best_mosaic.image1.offset.width, best_mosaic.image1.offset.height);
     let image::imageops::overlay(&mut background, &second, best_mosaic.image2.offset.width, best_mosaic.image2.offset.height);
     let image::imageops::overlay(&mut background, &third, best_mosaic.image3.offset.width, best_mosaic.image3.offset.height);
@@ -757,9 +753,7 @@ fn build_4_mosaic(first: RgbImage, second: RgbImage, third: RgbImage, fourth: Rg
         ),
     ]);
 
-    let mut background = create_background(
-        best_mosaic.total_size()
-    );
+    let mut background = create_background(best_mosaic.total_size());
     let image::imageops::overlay(&mut background, &first, best_mosaic.image1.offset.width, best_mosaic.image1.offset.height);
     let image::imageops::overlay(&mut background, &second, best_mosaic.image2.offset.width, best_mosaic.image2.offset.height);
     let image::imageops::overlay(&mut background, &third, best_mosaic.image3.offset.width, best_mosaic.image3.offset.height);
