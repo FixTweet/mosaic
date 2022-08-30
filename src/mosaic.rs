@@ -543,14 +543,22 @@ fn most_square_mosaic(mosaics: Vec<MosaicDims>) -> MosaicDims {
 }
 
 
-fn best_2_mosaic(first: RgbImage, second: RgbImage) -> Mosaic2Dims {
+fn best_2_mosaic(first: Size, second: Size) -> Mosaic2Dims {
     let top_bottom = top_bottom_2_mosaic(first, second);
     let left_right = left_right_2_mosaic(first, second);
     most_square_mosaic([top_bottom, left_right]);
 }
 
 fn build_2_mosaic(first: RgbImage, second: RgbImage) -> RgbImage {
-    let best_mosaic = best_2_mosaic(first, second);
+    let first_size = Size {
+        width: first.width(),
+        height: first.height(),
+    }
+    let second_size = Size {
+        width: second.width(),
+        height: second.height(),
+    }
+    let best_mosaic = best_2_mosaic(first_size, second_size);
     let total_size = best_mosaic.total_size();
     let scale_factor = overall_scale_factor(total_size);
     best_mosaic = best_mosaic.scale(scale_factor);
@@ -574,12 +582,7 @@ fn build_2_mosaic(first: RgbImage, second: RgbImage) -> RgbImage {
     background
 }
 
-fn left_right_2_mosaic(first: RgbImage, second: RgbImage) -> Mosaic2Dims {
-    let second_size = Size {
-        width: second.width(),
-        height: second.height(),
-    }
-
+fn left_right_2_mosaic(first: Size, second: Size) -> Mosaic2Dims {
     Mosaic2Dims {
         image1: ImageOffset {
             offset: Size {
@@ -587,26 +590,21 @@ fn left_right_2_mosaic(first: RgbImage, second: RgbImage) -> Mosaic2Dims {
                 height: 0,
             },
             dimensions: Size {
-                width: first.width(),
-                height: first.height(),
+                width: first.width,
+                height: first.height,
             },
         },
         image2: ImageOffset {
             offset: Size {
-                width: first.width() + SPACING_SIZE,
+                width: first.width + SPACING_SIZE,
                 height: 0,
             },
-            dimensions: scale_height_dimension(second_size, first.height()),
+            dimensions: scale_height_dimension(second, first.height),
         },
     }
 }
 
-fn top_bottom_2_mosaic(first: RgbImage, second: RgbImage) -> Mosaic2Dims {
-    let second_size = Size {
-        width: second.width(),
-        height: second.height(),
-    }
-
+fn top_bottom_2_mosaic(first: Size, second: Size) -> Mosaic2Dims {
     Mosaic2Dims {
         image1: ImageOffset {
             offset: Size {
@@ -614,16 +612,16 @@ fn top_bottom_2_mosaic(first: RgbImage, second: RgbImage) -> Mosaic2Dims {
                 height: 0,
             },
             dimensions: Size {
-                width: first.width(),
-                height: first.height(),
+                width: first.width,
+                height: first.height,
             },
         },
         image2: ImageOffset {
             offset: Size {
                 width: 0,
-                height: first.height() + SPACING_SIZE,
+                height: first.height + SPACING_SIZE,
             },
-            dimensions: scale_width_dimension(second_size, first.width()),
+            dimensions: scale_width_dimension(second, first.width),
         },
     }
 }
