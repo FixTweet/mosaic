@@ -144,8 +144,8 @@ pub struct Size {
 impl Size {
     fn scale(&self, scale_factor: f32) -> Size {
         Size {
-            width: self.width / scale_factor,
-            height: self.height / scale_factor,
+            width: (self.width as f32 / scale_factor).round() as u32,
+            height: (self.height as f32 / scale_factor).round() as u32,
         }
     }
     fn add(&self, other: Size) -> Size {
