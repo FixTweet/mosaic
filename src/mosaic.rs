@@ -764,7 +764,7 @@ fn four_columns_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -
     let image2_offset = ImageOffset {
         offset: Size {
             width: first.width + SPACING_SIZE,
-            height: 0
+            height: 0,
         },
         dimensions: scale_height_dimension(second, first.height),
     };
@@ -773,7 +773,7 @@ fn four_columns_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -
             width: image2_offset.total_width() + SPACING_SIZE,
             height: 0,
         },
-        dimensions: scale_height_dimension(third, first.height)
+        dimensions: scale_height_dimension(third, first.height),
     };
 
     Mosaic4ImageDims {
