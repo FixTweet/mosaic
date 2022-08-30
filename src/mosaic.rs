@@ -35,7 +35,7 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
         2 => {
             let first = images.pop_front().unwrap();
             let second = images.pop_front().unwrap();
-            mosaic_2(first, second);
+            build_2_mosaic(first, second);
         }
         3 => {
             let first = images.pop_front().unwrap();
@@ -53,44 +53,6 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
         }
         _ => panic!("impossible image length"),
     }
-}
-
-fn mosaic_2(first: RgbImage, second: RgbImage) -> RgbImage {
-    let size = calc_horizontal_size(&first, &second);
-    let size_mult = calc_multiplier(Size {
-        width: size.width,
-        height: size.height,
-    });
-
-    let [first, second] = resize_images([
-        (
-            first,
-            Size {
-                width: (size.first_width as f32 * size_mult).round() as u32,
-                height: (size.height as f32 * size_mult).round() as u32,
-            },
-        ),
-        (
-            second,
-            Size {
-                width: (size.second_width as f32 * size_mult).round() as u32,
-                height: (size.height as f32 * size_mult).round() as u32,
-            },
-        ),
-    ]);
-
-    let mut background = create_background(
-        (size.width as f32 * size_mult).round() as u32,
-        (size.height as f32 * size_mult).round() as u32,
-    );
-    image::imageops::overlay(&mut background, &first, 0, 0);
-    image::imageops::overlay(
-        &mut background,
-        &second,
-        (first.width() + SPACING_SIZE) as i64,
-        0,
-    );
-    background
 }
 
 fn mosaic_3(first: RgbMosaic, second: RgbMosaic, third: RgbMosaic) -> RgbImage {
@@ -578,4 +540,90 @@ fn most_square_mosaic(mosaics: Vec<MosaicDims>) -> MosaicDims {
     mosaics.iter().min_by_key(|mosaic| {
         unsquareness(mosaic)
     });
+}
+
+
+fn best_2_mosaic(first: RgbImage, second: RgbImage) -> Mosaic2Dims {
+    let top_bottom = top_bottom_2_mosaic(first, second);
+    let left_right = left_right_2_mosaic(first, second);
+    most_square_mosaic([top_bottom, left_right]);
+}
+
+fn build_2_mosaic(first: RgbImage, second: RgbImage) -> RgbImage {
+    let best_mosaic = best_2_mosaic(first, second);
+    let total_size = best_mosaic.total_size();
+    let scale_factor = overall_scale_factor(total_size);
+    best_mosaic = best_mosaic.scale(scale_factor);
+
+    let [first, second] = resize_images([
+        (
+            first,
+            best_mosaic.image1.dimensions,
+        ),
+        (
+            second,
+            best_mosaic.image2.dimensions,
+        )
+    ]);
+
+    let mut background = create_background(
+        best_mosaic.total_size()
+    );
+    let image::imageops::overlay(&mut background, &first, best_mosaic.image1.offset.width, best_mosaic.image1.offset.height);
+    let image::imageops::overlay(&mut background, &second, best_mosaic.image2.offset.width, best_mosaic.image2.offset.height);
+    background
+}
+
+fn left_right_2_mosaic(first: RgbImage, second: RgbImage) -> Mosaic2Dims {
+    let second_size = Size {
+        width: second.width(),
+        height: second.height(),
+    }
+
+    Mosaic2Dims {
+        image1: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: 0,
+            },
+            dimensions: Size {
+                width: first.width(),
+                height: first.height(),
+            },
+        },
+        image2: ImageOffset {
+            offset: Size {
+                width: first.width() + SPACING_SIZE,
+                height: 0,
+            },
+            dimensions: scale_height_dimension(second_size, first.height()),
+        },
+    }
+}
+
+fn top_bottom_2_mosaic(first: RgbImage, second: RgbImage) -> Mosaic2Dims {
+    let second_size = Size {
+        width: second.width(),
+        height: second.height(),
+    }
+
+    Mosaic2Dims {
+        image1: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: 0,
+            },
+            dimensions: Size {
+                width: first.width(),
+                height: first.height(),
+            },
+        },
+        image2: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: first.height() + SPACING_SIZE,
+            },
+            dimensions: scale_width_dimension(second_size, first.width()),
+        },
+    }
 }
