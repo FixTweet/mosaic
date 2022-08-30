@@ -855,9 +855,9 @@ fn two_columns_three_one_4_mosaic(first: Size, second: Size, third: Size, fourth
     let image4_dims = scale_height_dimension(fourth, first_col.total_size().height);
 
     Mosaic4ImageDims {
-        image1: first_row.image1,
-        image2: first_row.image2,
-        image3: first_row.image3,
+        image1: first_col.image1,
+        image2: first_col.image2,
+        image3: first_col.image3,
         image4: ImageOffset {
             offset: Size {
                 width: first_col.total_size().width + SPACING_SIZE,
