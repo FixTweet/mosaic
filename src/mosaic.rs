@@ -301,21 +301,7 @@ impl MosaicDims for Mosaic4ImageDims {
     }
 }
 
-pub struct HorizontalSize {
-    pub width: u32,
-    pub height: u32,
-    pub first_width: u32,
-    pub second_width: u32,
-}
-
-pub struct VerticalSize {
-    pub width: u32,
-    pub height: u32,
-    pub first_height: u32,
-    pub second_height: u32,
-}
-
-fn unsquareness<T: MosaicDims>(mosaic: T) -> f32 {
+fn unsquareness<T: MosaicDims>(mosaic: &T) -> f32 {
     let total_size = mosaic.total_size();
     let ratio = if total_size.width < total_size.height {
         total_size.height as f32 / total_size.width as f32
