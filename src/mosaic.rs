@@ -375,6 +375,37 @@ fn calc_multiplier(size: Size) -> f32 {
     }
 }
 
+
+fn scale_height_dimension(image_size: Size, other_height: u32) -> Size {
+    let scale_factor = image_size.height as f32 / other_height as f32;
+    Size {
+        (image_size.width as f32 / scale_factor).round() as u32,
+        image_size.height,
+    }
+}
+
+fn scale_width_dimension(image_size: Size, other_width: u32) -> Size {
+    let scale_factor = image_size.width as f32 / other_width as f32;
+    Size {
+        image_size.width,
+        (image_size.height as f32 / scale_factor).round() as u32,
+    }
+}
+
+fn overall_scale_factor(size: Size) -> f32 {
+    let biggest = if size.width > size.height {
+        size.width
+    } else {
+        size.height
+    };
+
+    if biggest > MAX_SIZE {
+        MAX_SIZE as f32 / biggest as f32
+    } else {
+        1.0
+    }
+}
+
 fn resize_images<const COUNT: usize>(images: [(RgbImage, Size); COUNT]) -> [RgbImage; COUNT] {
     tracing::debug!("resizing {} images", COUNT);
 
