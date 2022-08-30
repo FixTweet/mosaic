@@ -895,7 +895,7 @@ fn three_rows_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Size)
 fn three_rows_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let second_row = left_right_2_mosaic(second, third);
     let image1_dims = scale_width_dimension(first, second_row.total_size().width);
-    let second_row_moved = second_row.add_height(image1_dims.total_height() + SPACING_SIZE);
+    let second_row_moved = second_row.add_height(image1_dims.height + SPACING_SIZE);
 
     Mosaic4ImageDims {
         image1: ImageOffset {
