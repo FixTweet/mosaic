@@ -272,24 +272,24 @@ pub struct Mosaic2ImageDims {
     pub image2: ImageOffset,
 }
 
-impl MosaicDims for Mosaic2Dims {
+impl MosaicDims for Mosaic2ImageDims {
     fn total_size(&self) -> Size {
         self.image2.offset.add(self.image2.dimensions)
     }
-    fn scale(&self, scale_factor: f32) -> Mosaic2Dims {
-        Mosaic2Dims {
+    fn scale(&self, scale_factor: f32) -> Mosaic2ImageDims {
+        Mosaic2ImageDims {
             image1: self.image1.scale(scale_factor),
             image2: self.image2.scale(scale_factor),
         }
     }
-    fn add_height(&self, height: u32) -> Mosaic2Dims {
-        Mosaic2Dims {
+    fn add_height(&self, height: u32) -> Mosaic2ImageDims {
+        Mosaic2ImageDims {
             image1: self.image1.add_height(height),
             image2: self.image2.add_height(height),
         }
     }
     fn add_width(&self, width: u32) -> MosaicDims {
-        Mosaic2Dims {
+        Mosaic2ImageDims {
             image1: self.image1.add_width(width),
             image2: self.image2.add_width(width),
         }
@@ -302,26 +302,26 @@ pub struct Mosaic3ImageDims {
     pub image3: ImageOffset,
 }
 
-impl MosaicDims for Mosaic3Dims {
+impl MosaicDims for Mosaic3ImageDims {
     fn total_size(&self) -> Size {
         self.image3.offset.add(self.image3.dimensions)
     }
-    fn scale(&self, scale_factor: f32) -> Mosaic3Dims {
-        Mosaic3Dims {
+    fn scale(&self, scale_factor: f32) -> Mosaic3ImageDims {
+        Mosaic3ImageDims {
             image1: self.image1.scale(scale_factor),
             image2: self.image2.scale(scale_factor),
             image3: self.image3.scale(scale_factor),
         }
     }
-    fn add_height(&self, height: u32) -> Mosaic3Dims {
-        Mosaic3Dims {
+    fn add_height(&self, height: u32) -> Mosaic3ImageDims {
+        Mosaic3ImageDims {
             image1: self.image1.add_height(height),
             image2: self.image2.add_height(height),
             image3: self.image3.add_height(height),
         }
     }
-    fn add_width(&self, width: u32) -> Mosaic3Dims {
-        Mosaic3Dims {
+    fn add_width(&self, width: u32) -> Mosaic3ImageDims {
+        Mosaic3ImageDims {
             image1: self.image1.add_width(width),
             image2: self.image2.add_width(width),
             image3: self.image3.add_width(width),
@@ -336,28 +336,28 @@ pub struct Mosaic4ImageDims {
     pub image4: ImageOffset,
 }
 
-impl MosaicDims for Mosaic4Dims {
+impl MosaicDims for Mosaic4ImageDims {
     fn total_size(&self) -> Size {
         self.image4.offset.add(self.image4.dimensions)
     }
-    fn scale(&self, scale_factor: f32) -> Mosaic4Dims {
-        Mosaic4Dims {
+    fn scale(&self, scale_factor: f32) -> Mosaic4ImageDims {
+        Mosaic4ImageDims {
             image1: self.image1.scale(scale_factor),
             image2: self.image2.scale(scale_factor),
             image3: self.image3.scale(scale_factor),
             image4: self.image4.scale(scale_factor),
         }
     }
-    fn add_height(&self, height: u32) -> Mosaic4Dims {
-        Mosaic4Dims {
+    fn add_height(&self, height: u32) -> Mosaic4ImageDims {
+        Mosaic4ImageDims {
             image1: self.image1.add_height(height),
             image2: self.image2.add_height(height),
             image3: self.image3.add_height(height),
             image4: self.image4.add_height(height),
         }
     }
-    fn add_width(&self, width: u32) -> Mosaic4Dims {
-        Mosaic4Dims {
+    fn add_width(&self, width: u32) -> Mosaic4ImageDims {
+        Mosaic4ImageDims {
             image1: self.image1.add_width(width),
             image2: self.image2.add_width(width),
             image3: self.image3.add_width(width),
@@ -397,7 +397,7 @@ fn most_square_mosaic(mosaics: Vec<MosaicDims>) -> MosaicDims {
 }
 
 
-fn best_2_mosaic(first: Size, second: Size) -> Mosaic2Dims {
+fn best_2_mosaic(first: Size, second: Size) -> Mosaic2ImageDims {
     let top_bottom = top_bottom_2_mosaic(first, second);
     let left_right = left_right_2_mosaic(first, second);
     most_square_mosaic([top_bottom, left_right]);
@@ -434,8 +434,8 @@ fn build_2_mosaic(first: RgbImage, second: RgbImage) -> RgbImage {
     background
 }
 
-fn left_right_2_mosaic(first: Size, second: Size) -> Mosaic2Dims {
-    Mosaic2Dims {
+fn left_right_2_mosaic(first: Size, second: Size) -> Mosaic2ImageDims {
+    Mosaic2ImageDims {
         image1: ImageOffset {
             offset: Size {
                 width: 0,
@@ -453,8 +453,8 @@ fn left_right_2_mosaic(first: Size, second: Size) -> Mosaic2Dims {
     }
 }
 
-fn top_bottom_2_mosaic(first: Size, second: Size) -> Mosaic2Dims {
-    Mosaic2Dims {
+fn top_bottom_2_mosaic(first: Size, second: Size) -> Mosaic2ImageDims {
+    Mosaic2ImageDims {
         image1: ImageOffset {
             offset: Size {
                 width: 0,
@@ -472,7 +472,7 @@ fn top_bottom_2_mosaic(first: Size, second: Size) -> Mosaic2Dims {
     }
 }
 
-fn best_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+fn best_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3ImageDims {
     let three_columns = three_columns_3_mosaic(first, second, third);
     let top_top_bottom = top_top_bottom_3_mosaic(first, second, third);
     let left_right_right = left_right_right_3_mosaic(first, second, third);
@@ -522,7 +522,7 @@ fn build_3_mosaic(first: RgbImage, second: RgbImage, third: RgbImage) -> RgbImag
     background
 }
 
-fn three_columns_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+fn three_columns_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3ImageDims {
     let image2_offset = ImageOffset {
         offset: Size {
             width: first.width + SPACING_SIZE,
@@ -531,7 +531,7 @@ fn three_columns_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims
         dimensions: scale_height_dimension(second, first.height),
     };
 
-    Mosaic3Dims {
+    Mosaic3ImageDims {
         image1: ImageOffset {
             offset: Size {
                 width: 0,
@@ -550,7 +550,7 @@ fn three_columns_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims
     }
 }
 
-fn top_top_bottom_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+fn top_top_bottom_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3ImageDims {
     let image2_offset = ImageOffset {
         offset: Size {
             width: first.width + SPACING_SIZE,
@@ -559,7 +559,7 @@ fn top_top_bottom_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dim
         dimensions: scale_height_dimension(second, first.height)
     };
 
-    Mosaic3Dims {
+    Mosaic3ImageDims {
         image1: ImageOffset {
             offset: Size {
                 width: 0,
@@ -578,7 +578,7 @@ fn top_top_bottom_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dim
     }
 }
 
-fn left_left_right_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+fn left_left_right_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3ImageDims {
     let image2_offset = ImageOffset {
         offset: Size {
             width: 0,
@@ -587,7 +587,7 @@ fn left_left_right_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Di
         dimensions: scale_width_dimension(second, first.width)
     };
 
-    Mosaic3Dims {
+    Mosaic3ImageDims {
         image1: ImageOffset {
             offset: Size {
                 width: 0,
@@ -606,7 +606,7 @@ fn left_left_right_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Di
     }
 }
 
-fn left_right_right_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+fn left_right_right_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3ImageDims {
     let image3_dims = scale_width_dimension(third, second.width);
     let image1_dims = scale_height_dimension(first, second.height + image3_dims.height + SPACING_SIZE);
     let image2_offset = ImageOffset {
@@ -624,7 +624,7 @@ fn left_right_right_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3D
         dimensions: scale_width_dimension(third, second.width),
     };
 
-    Mosaic3Dims {
+    Mosaic3ImageDims {
         image1: ImageOffset {
             offset: Size {
                 width: 0,
@@ -637,11 +637,11 @@ fn left_right_right_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3D
     }
 }
 
-fn top_bottom_bottom_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+fn top_bottom_bottom_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3ImageDims {
     let image3_dims = scale_height_dimension(third, second.height);
     let image1_dims = scale_width_dimension(first, second.width + image3_dims.width + SPACING_SIZE);
 
-    Mosaic3Dims {
+    Mosaic3ImageDims {
         image1: ImageOffset {
             offset: Size {
                 width: 0,
@@ -666,7 +666,7 @@ fn top_bottom_bottom_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3
     }
 }
 
-fn three_rows_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+fn three_rows_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3ImageDims {
     let image2_offset = ImageOffset {
         offset: Size {
             width: 0,
@@ -675,7 +675,7 @@ fn three_rows_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
         dimensions: scale_width_dimension(second, first.width),
     };
 
-    Mosaic3Dims {
+    Mosaic3ImageDims {
         image1: ImageOffset {
             offset: Size {
                 width: 0,
@@ -694,7 +694,7 @@ fn three_rows_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
     }
 }
 
-fn best_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn best_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let four_columns = four_columns_4_mosaic(first, second, third, fourth);
     let four_rows = four_rows_4_mosaic(first, second, third, fourth);
     let two_rows_of_two = two_rows_of_two_4_mosaic(first, second, third, fourth);
@@ -761,7 +761,7 @@ fn build_4_mosaic(first: RgbImage, second: RgbImage, third: RgbImage, fourth: Rg
     background
 }
 
-fn four_columns_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn four_columns_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let image2_offset = ImageOffset {
         offset: Size {
             width: first.width + SPACING_SIZE,
@@ -777,7 +777,7 @@ fn four_columns_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -
         dimensions: scale_height_dimension(third, first.height)
     };
 
-    Mosaic4Dims {
+    Mosaic4ImageDims {
         image1: ImageOffset {
             offset: Size {
                 width: 0,
@@ -797,7 +797,7 @@ fn four_columns_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -
     }
 }
 
-fn four_rows_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn four_rows_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let image2_offset = ImageOffset {
         offset: Size {
             width: 0,
@@ -813,7 +813,7 @@ fn four_rows_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> M
         dimensions: scale_width_dimension(third, first.width)
     };
 
-    Mosaic4Dims {
+    Mosaic4ImageDims {
         image1: ImageOffset {
             offset: Size {
                 width: 0,
@@ -833,13 +833,13 @@ fn four_rows_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> M
     }
 }
 
-fn two_rows_of_two_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn two_rows_of_two_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let first_row = left_right_2_mosaic(first, second);
     let second_row = left_right_2_mosaic(third, fourth);
     let scale_factor = second_row.total_size().width as f32 / first_row.total_size().width as f32;
     second_row = second_row.scale(scale_factor).add_height(first_row.total_size().height + SPACING_SIZE);
 
-    Mosaic4Dims {
+    Mosaic4ImageDims {
         image1: first_row.image1,
         image2: first_row.image2,
         image3: second_row.image1,
@@ -847,13 +847,13 @@ fn two_rows_of_two_4_mosaic(first: Size, second: Size, third: Size, fourth: Size
     }
 }
 
-fn two_rows_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn two_rows_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let second_row = three_columns_3_mosaic(second, third, fourth);
     image1_dims = scale_width_dimension(first, second_row.total_size().width);
     second_row = second_row.add_height(image1_dims.height + SPACING_SIZE);
 
 
-    Mosaic4Dims {
+    Mosaic4ImageDims {
         image1: ImageOffset {
             offset: Size {
                 width: 0,
@@ -867,11 +867,11 @@ fn two_rows_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth: S
     }
 }
 
-fn two_rows_three_one_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn two_rows_three_one_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let first_row = three_columns_3_mosaic(first, second, third);
     image4_dims = scale_width_dimension(fourth, first_row.total_size().width);
 
-    Mosaic4Dims {
+    Mosaic4ImageDims {
         image1: first_row.image1,
         image2: first_row.image2,
         image3: first_row.image3,
@@ -885,13 +885,13 @@ fn two_rows_three_one_4_mosaic(first: Size, second: Size, third: Size, fourth: S
     }
 }
 
-fn two_columns_of_two_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn two_columns_of_two_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let first_col = top_bottom_2_mosaic(first, second);
     let second_col = top_bottom_2_mosaic(third, fourth);
     let scale_factor = second_col.total_size().height as f32 / first_col.total_size().height as f32;
     second_col = second_col.scale(scale_factor).add_width(first_col.total_size().width + SPACING_SIZE);
 
-    Mosaic4Dims {
+    Mosaic4ImageDims {
         image1: first_col.image1,
         image2: first_col.image2,
         image3: second_col.image1,
@@ -899,12 +899,12 @@ fn two_columns_of_two_4_mosaic(first: Size, second: Size, third: Size, fourth: S
     }
 }
 
-fn two_columns_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn two_columns_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let second_col = three_rows_3_mosaic(second, third, fourth);
     image1_dims = scale_height_dimension(first, second_col.total_size().height);
     second_col = second_col.add_width(image1_dims.width + SPACING_SIZE);
 
-    Mosaic4Dims {
+    Mosaic4ImageDims {
         image1: ImageOffset {
             offset: Size {
                 width: 0,
@@ -918,11 +918,11 @@ fn two_columns_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth
     }
 }
 
-fn two_columns_three_one_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn two_columns_three_one_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let first_col = three_rows_3_mosaic(first, second, third);
     image4_dims = scale_height_dimension(fourth, first_col.total_size().height);
 
-    Mosaic4Dims {
+    Mosaic4ImageDims {
         image1: first_row.image1,
         image2: first_row.image2,
         image3: first_row.image3,
@@ -936,7 +936,7 @@ fn two_columns_three_one_4_mosaic(first: Size, second: Size, third: Size, fourth
     }
 }
 
-fn three_rows_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn three_rows_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let first_row = left_right_2_mosaic(first, second);
     let image3_offset = ImageOffset {
         offset: Size {
@@ -960,7 +960,7 @@ fn three_rows_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Size)
     }
 }
 
-fn three_rows_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn three_rows_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let second_row = left_right_2_mosaic(second, third);
     image1_dims = scale_width_dimension(first, second_row.total_size().width);
     second_row.add_height(image1_dims.total_height() + SPACING_SIZE);
@@ -985,7 +985,7 @@ fn three_rows_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Size)
     }
 }
 
-fn three_rows_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn three_rows_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let third_row = left_right_2_mosaic(third, fourth);
     image1_offset = ImageOffset {
         offset: Size {
@@ -1011,7 +1011,7 @@ fn three_rows_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size)
     }
 }
 
-fn three_columns_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn three_columns_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let first_col = top_bottom_2_mosaic(first, second);
     let image3_offset = ImageOffset {
         offset: Size {
@@ -1035,7 +1035,7 @@ fn three_columns_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Si
     }
 }
 
-fn three_columns_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn three_columns_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let second_col = top_bottom_2_mosaic(second, third);
     image1_offset = ImageOffset {
         offset: Size {
@@ -1060,7 +1060,7 @@ fn three_columns_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Si
     }
 }
 
-fn three_columns_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+fn three_columns_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4ImageDims {
     let third_col = top_bottom_2_mosaic(third, fourth);
     let image1_offset = ImageOffset {
         offset: Size {
