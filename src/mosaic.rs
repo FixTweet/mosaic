@@ -532,3 +532,19 @@ pub struct VerticalSize {
     pub first_height: u32,
     pub second_height: u32,
 }
+
+fn unsquareness(mosaic: MosaicDims) -> f32 {
+    let total_size = mosaic.total_size()
+    let ratio = if total_size.width < total_size.height {
+        total_size.height as f32 / total_size.width as f32
+    } else {
+        total_size.width as f32 / total_size.height as f32
+    }
+    ratio
+}
+
+fn most_square_mosaic(mosaics: Vec<MosaicDims>) -> MosaicDims {
+    mosaics.iter().min_by_key(|mosaic| {
+        unsquareness(mosaic)
+    });
+}
