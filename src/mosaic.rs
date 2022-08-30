@@ -234,6 +234,12 @@ impl ImageOffset {
             dimensions: self.dimensions.scale(scale_factor),
         }
     }
+    fn total_width(&self) -> u32 {
+        return self.offset.width + self.dimensions.width;
+    }
+    fn total_height(&self) -> u32 {
+        return self.offset.height + self.dimensions.height;
+    }
 }
 
 trait MosaicDims {
@@ -478,7 +484,7 @@ fn three_columns_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims
         image2: image2_offset,
         image3: ImageOffset {
             offset: Size {
-                width: image2_offset.offset.width + image2_offset.dimensions.width + SPACING_SIZE,
+                width: image2_offset.total_width() + SPACING_SIZE,
                 height: 0
             },
             dimensions: scale_height_dimension(third, first.height),
@@ -494,7 +500,6 @@ fn top_top_bottom_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dim
         },
         dimensions: scale_height_dimension(second, first.height)
     };
-    let total_width = image2_offset.offset.width + image2_offset.dimensions.width;
 
     Mosaic3Dims {
         image1: ImageOffset {
@@ -510,13 +515,126 @@ fn top_top_bottom_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dim
                 width: 0,
                 height: first.height + SPACING_SIZE,
             },
-            dimensions: scale_width_dimension(third, total_width),
+            dimensions: scale_width_dimension(third, image2_offset.total_width()),
         },
     }
 }
 
-// TODO: Add further 3 image mosaic implementations here
+fn left_left_right_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+    let image2_offset = ImageOffset {
+        offset: Size {
+            width: 0,
+            height: first.height + SPACING_SIZE,
+        },
+        dimensions: scale_width_dimension(second, first.width)
+    };
 
+    Mosaic3Dims {
+        image1: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: 0,
+            },
+            dimensions: first,
+        },
+        image2: image2_offset,
+        image3: ImageOffset {
+            offset: Size {
+                width: first.width + SPACING_SIZE,
+                height: 0,
+            },
+            dimensions: scale_height_dimension(third, image2_offset.total_height()),
+        },
+    }
+}
+
+fn left_right_right_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+    let image3_dims = scale_width_dimension(third, second.width);
+    let image1_dims = scale_height_dimension(first, second.height + image3_dims.height + SPACING_SIZE);
+    let image2_offset = ImageOffset {
+        offset: Size {
+            width: image1_dims.width + SPACING_SIZE,
+            height: 0,
+        },
+        dimensions: second,
+    };
+    let image3_offset = ImageOffset {
+        offset: Size {
+            width: image1_dims.width + SPACING_SIZE,
+            height: image2_offset.total_height() + SPACING_SIZE;
+        },
+        dimensions: scale_width_dimension(third, second.width);
+    };
+
+    Mosaic3Dims {
+        image1: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: 0,
+            }
+            dimensions: image1_dims,
+        },
+        image2: image2_offset,
+        image3: image3_offset,
+    }
+}
+
+fn top_bottom_bottom_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+    let image3_dims = scale_height_dimension(third, second.height);
+    let image1_dims = scale_width_dimension(first, second.width + image3_dims.width + SPACING_SIZE);
+
+    Mosaic3Dims {
+        image1: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: 0,
+            },
+            dimensions: image1_dims,
+        },
+        image2: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: image1_dims.height + SPACING_SIZE,
+            },
+            dimensions: second,
+        },
+        image3: ImageOffset {
+            offset: Size {
+                width: second.width + SPACING_SIZE,
+                height: image1_dims.height + SPACING_SIZE,
+            },
+            dimensions: image3_dims,
+        },
+    }
+}
+
+fn three_rows_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dims {
+    let image2_offset = ImageOffset {
+        offset: Size {
+            width: 0,
+            height: first.height + SPACING_SIZE,
+        },
+        dimensions: scale_width_dimension(second, first.width),
+    };
+
+    Mosaic3Dims {
+        image1: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: 0,
+            },
+            dimensions: first,
+        },
+        image2: image2_offset,
+        image3: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: image2_offset.total_height() + SPACING_SIZE,
+            },
+            dimensions: scale_width_dimension(third, first.width),
+        },
+    }
+}
 
 fn best_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
     let four_columns = four_columns_4_mosaic(first, second, third, fourth);
@@ -585,7 +703,7 @@ fn four_columns_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -
     };
     let image3_offset = ImageOffset {
         offset: Size {
-            width: image2_offset.offset.width + image2_offset.dimensions.width + SPACING_SIZE,
+            width: image2_offset.total_width() + SPACING_SIZE,
             height: 0,
         },
         dimensions: scale_height_dimension(third, first.height)
@@ -603,7 +721,7 @@ fn four_columns_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -
         image3: image3_offset,
         image4: ImageOffset {
             offset: Size {
-                width: image3_offset.offset.width + image3_offset.dimensions.width + SPACING_SIZE,
+                width: image3_offset.total_width() + SPACING_SIZE,
                 height: 0,
             },
             dimensions: scale_height_dimension(fourth, first.height),
