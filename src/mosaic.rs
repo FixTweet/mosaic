@@ -48,94 +48,10 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
             let second = images.pop_front().unwrap();
             let third = images.pop_front().unwrap();
             let fourth = images.pop_front().unwrap();
-            mosaic_4(first, second, third, fourth);
-
+            build_4_mosaic(first, second, third, fourth);
         }
         _ => panic!("impossible image length"),
     }
-}
-
-fn mosaic_4(first: RgbImage, second: RgbImage, third: RgbImage, fourth: RgbImage) -> RgbImage {
-    let top = calc_horizontal_size(&first, &second);
-    let bottom = calc_horizontal_size(&third, &fourth);
-    let all = calc_vertical_size_raw(
-        Size {
-            width: top.width,
-            height: top.height,
-        },
-        Size {
-            width: bottom.width,
-            height: bottom.height,
-        },
-    );
-    let top_width_mult = all.first_height as f32 / top.height as f32;
-    let bottom_width_mult = all.second_height as f32 / bottom.height as f32;
-    let size_mult = calc_multiplier(Size {
-        width: all.width,
-        height: all.height,
-    });
-
-    let [first, second, third, fourth] = resize_images([
-        (
-            first,
-            Size {
-                width: (top.first_width as f32 * top_width_mult * size_mult).round() as u32,
-                height: (all.first_height as f32 * size_mult).round() as u32,
-            },
-        ),
-        (
-            second,
-            Size {
-                width: (top.second_width as f32 * top_width_mult * size_mult).round()
-                    as u32,
-                height: (all.first_height as f32 * size_mult).round() as u32,
-            },
-        ),
-        (
-            third,
-            Size {
-                width: (bottom.first_width as f32 * bottom_width_mult * size_mult).round()
-                    as u32,
-                height: (all.second_height as f32 * size_mult) as u32,
-            },
-        ),
-        (
-            fourth,
-            Size {
-                width: (bottom.second_width as f32 * bottom_width_mult * size_mult).round()
-                    as u32,
-                height: (all.second_height as f32 * size_mult) as u32,
-            },
-        ),
-    ]);
-
-    let mut background = create_background(
-        (all.width as f32 * size_mult) as u32,
-        (all.height as f32 * size_mult) as u32,
-    );
-
-    // We also multiply the spacing by how much the width increased, this isn't ideal but
-    // it's barely noticeable and it's how the original FixTweet-Mosaic code works.
-    image::imageops::overlay(&mut background, &first, 0, 0);
-    image::imageops::overlay(
-        &mut background,
-        &second,
-        (first.width() as f32 + SPACING_SIZE as f32 * top_width_mult) as i64,
-        0,
-    );
-    image::imageops::overlay(
-        &mut background,
-        &third,
-        0,
-        (first.height() + SPACING_SIZE) as i64,
-    );
-    image::imageops::overlay(
-        &mut background,
-        &fourth,
-        (third.width() as f32 + SPACING_SIZE as f32 * bottom_width_mult) as i64,
-        (first.height() + SPACING_SIZE) as i64,
-    );
-    background
 }
 
 fn create_background(width: u32, height: u32) -> RgbImage {
@@ -601,3 +517,96 @@ fn top_top_bottom_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3Dim
 
 // TODO: Add further 3 image mosaic implementations here
 
+
+fn best_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+    let four_columns = four_columns_4_mosaic(first, second, third, fourth);
+    // TODO: Add remaining 4-image mosaic implementations
+    most_square_mosaic([four_columns]);
+}
+
+fn build_4_mosaic(first: RgbImage, second: RgbImage, third: RgbImage, fourth: RgbImage) -> RgbImage {
+    let first_size = Size {
+        width: first.width(),
+        height: first.height(),
+    }
+    let second_size = Size {
+        width: second.width(),
+        height: second.height(),
+    }
+    let third_size = Size {
+        width: third.width(),
+        height: third.height(),
+    }
+    let fourth_size = Size {
+        width: fourth.width(),
+        height: fourth.height(),
+    }
+    let best_mosaic = best_4_mosaic(first_size, second_size, third_size, fourth_size);
+    let total_size = best_mosaic.total_size();
+    let scale_factor = overall_scale_factor(total_size);
+    best_mosaic = best_mosaic.scale(scale_factor);
+
+    let [first, second, third, fourth] = resize_images([
+        (
+            first,
+            best_mosaic.image1.dimensions,
+        ),
+        (
+            second,
+            best_mosaic.image2.dimensions,
+        ),
+        (
+            third,
+            best_mosaic.image3.dimensions,
+        ),
+        (
+            fourth,
+            best_mosaic.image4.dimensions,
+        ),
+    ]);
+
+    let mut background = create_background(
+        best_mosaic.total_size()
+    );
+    let image::imageops::overlay(&mut background, &first, best_mosaic.image1.offset.width, best_mosaic.image1.offset.height);
+    let image::imageops::overlay(&mut background, &second, best_mosaic.image2.offset.width, best_mosaic.image2.offset.height);
+    let image::imageops::overlay(&mut background, &third, best_mosaic.image3.offset.width, best_mosaic.image3.offset.height);
+    let image::imageops::overlay(&mut background, &fourth, best_mosaic.image4.offset.width, best_mosaic.image4.offset.height);
+    background
+}
+
+fn four_columns_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+    let image2_offset = ImageOffset {
+        offset: Size {
+            width: first.width + SPACING_SIZE,
+            height: 0
+        },
+        dimensions: scale_height_dimension(second, first.height),
+    };
+    let image3_offset = ImageOffset {
+        offset: Size {
+            width: image2_offset.offset.width + image2_offset.dimensions.width + SPACING_SIZE,
+            height: 0,
+        },
+        dimensions: scale_height_dimension(third, first.height)
+    };
+
+    Mosaic4Dims {
+        image1: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: 0,
+            },
+            dimensions: first,
+        },
+        image2: image2_offset,
+        image3: image3_offset,
+        image4: ImageOffset {
+            offset: Size {
+                width: image3_offset.offset.width + image3_offset.dimensions.width + SPACING_SIZE,
+                height: 0,
+            },
+            dimensions: scale_height_dimension(fourth, first.height),
+        },
+    }
+}
