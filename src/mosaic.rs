@@ -854,9 +854,43 @@ fn two_rows_of_two_4_mosaic(first: Size, second: Size, third: Size, fourth: Size
 }
 
 fn two_rows_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+    let second_row = three_columns_3_mosaic(second, third, fourth);
+    image1_dims = scale_width_dimension(first, second_row.image3.total_width());
+    second_row = second_row.add_height(image1_dims.height + SPACING_SIZE);
+
+
+    Mosaic4Dims {
+        image1: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: 0,
+            },
+            dimensions: image1_dims,
+        },
+        image2: second_row.image1,
+        image3: second_row.image2,
+        image4: second_row.image3,
+    }
 }
+
 fn two_rows_three_one_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
+    let first_row = three_columns_3_mosaic(first, second, third);
+    image4_dims = scale_width_dimension(fourth, first_row.image3.total_width());
+
+    Mosaic4Dims {
+        image1: first_row.image1,
+        image2: first_row.image2,
+        image3: first_row.image3,
+        image4: ImageOffset {
+            offset: Size {
+                width: 0,
+                height: first_row.image3.total_height(),
+            },
+            dimensions: image4_dims,
+        },
+    }
 }
+
 fn two_columns_of_two_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
 }
 fn two_columns_one_three_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic4Dims {
