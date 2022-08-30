@@ -634,8 +634,8 @@ fn best_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic
     let two_rows_one_three = two_rows_one_three_4_mosaic(first, second, third, fourth);
     let two_rows_three_one = two_rows_three_one_4_mosaic(first, second, third, fourth);
     let two_columns_of_two = two_columns_of_two_4_mosaic(first, second, third, fourth);
-    let two_columns_one_three = two_columns_one_three(first, second, third, fourth);
-    let two_columns_three_one = two_columns_three_one(first, second, third, fourth);
+    let two_columns_one_three = two_columns_one_three_4_mosaic(first, second, third, fourth);
+    let two_columns_three_one = two_columns_three_one_4_mosaic(first, second, third, fourth);
     let three_rows_211 = three_rows_211_4_mosaic(first, second, third, fourth);
     let three_rows_121 = three_rows_121_4_mosaic(first, second, third, fourth);
     let three_rows_112 = three_rows_112_4_mosaic(first, second, third, fourth);
