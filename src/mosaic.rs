@@ -407,11 +407,11 @@ fn build_2_mosaic(first: RgbImage, second: RgbImage) -> RgbImage {
     let first_size = Size {
         width: first.width(),
         height: first.height(),
-    }
+    };
     let second_size = Size {
         width: second.width(),
         height: second.height(),
-    }
+    };
     let best_mosaic = best_2_mosaic(first_size, second_size);
     let total_size = best_mosaic.total_size();
     let scale_factor = overall_scale_factor(total_size);
@@ -486,15 +486,15 @@ fn build_3_mosaic(first: RgbImage, second: RgbImage, third: RgbImage) -> RgbImag
     let first_size = Size {
         width: first.width(),
         height: first.height(),
-    }
+    };
     let second_size = Size {
         width: second.width(),
         height: second.height(),
-    }
+    };
     let third_size = Size {
         width: third.width(),
         height: third.height(),
-    }
+    };
     let best_mosaic = best_3_mosaic(first_size, second_size, third_size);
     let total_size = best_mosaic.total_size();
     let scale_factor = overall_scale_factor(total_size);
@@ -619,9 +619,9 @@ fn left_right_right_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3D
     let image3_offset = ImageOffset {
         offset: Size {
             width: image1_dims.width + SPACING_SIZE,
-            height: image2_offset.total_height() + SPACING_SIZE;
+            height: image2_offset.total_height() + SPACING_SIZE,
         },
-        dimensions: scale_width_dimension(third, second.width);
+        dimensions: scale_width_dimension(third, second.width),
     };
 
     Mosaic3Dims {
@@ -629,7 +629,7 @@ fn left_right_right_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3D
             offset: Size {
                 width: 0,
                 height: 0,
-            }
+            },
             dimensions: image1_dims,
         },
         image2: image2_offset,
@@ -716,19 +716,19 @@ fn build_4_mosaic(first: RgbImage, second: RgbImage, third: RgbImage, fourth: Rg
     let first_size = Size {
         width: first.width(),
         height: first.height(),
-    }
+    };
     let second_size = Size {
         width: second.width(),
         height: second.height(),
-    }
+    };
     let third_size = Size {
         width: third.width(),
         height: third.height(),
-    }
+    };
     let fourth_size = Size {
         width: fourth.width(),
         height: fourth.height(),
-    }
+    };
     let best_mosaic = best_4_mosaic(first_size, second_size, third_size, fourth_size);
     let total_size = best_mosaic.total_size();
     let scale_factor = overall_scale_factor(total_size);
@@ -1044,7 +1044,7 @@ fn three_columns_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Si
         },
         dimensions: scale_height_dimension(first, second_col.total_size().height),
     };
-    second_col = second_col.add_width(image1_offset.total_width() + SPACING_SIZE)
+    second_col = second_col.add_width(image1_offset.total_width() + SPACING_SIZE);
 
     Mosaic4ImageDims {
         image1: image1_offset,
