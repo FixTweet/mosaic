@@ -23,6 +23,7 @@
  */
 
 use std::{collections::VecDeque, time::Instant};
+use std::cmp::Ordering::Equal;
 
 use image::{imageops::FilterType, RgbImage};
 use tracing::instrument;
@@ -324,16 +325,18 @@ fn unsquareness<T: MosaicDims>(mosaic: T) -> f32 {
     ratio
 }
 
-fn most_square_mosaic<T: MosaicDims>(mosaics: &[T]) -> T {
-    mosaics.iter().min_by_key(|mosaic| {
-        unsquareness(mosaic)
-    })
+fn most_square_mosaic<T: MosaicDims>(mosaics: Vec<T>) -> T {
+    mosaics.iter().min_by(|mosaic_a, mosaic_b| {
+        let ratio_a = unsquareness(*mosaic_a);
+        let ratio_b = unsquareness(*mosaic_b);
+        return ratio_a.partial_cmp(&ratio_b).unwrap_or(Equal);
+    }).unwrap()
 }
 
 fn best_2_mosaic(first: Size, second: Size) -> Mosaic2ImageDims {
     let top_bottom = top_bottom_2_mosaic(first, second);
     let left_right = left_right_2_mosaic(first, second);
-    return most_square_mosaic(&[top_bottom, left_right]);
+    return most_square_mosaic(vec![top_bottom, left_right]);
 }
 
 fn build_2_mosaic(first: RgbImage, second: RgbImage) -> RgbImage {
@@ -412,7 +415,7 @@ fn best_3_mosaic(first: Size, second: Size, third: Size) -> Mosaic3ImageDims {
     let left_left_right = left_left_right_3_mosaic(first, second, third);
     let top_bottom_bottom = top_bottom_bottom_3_mosaic(first, second, third);
     let three_rows = three_rows_3_mosaic(first, second, third);
-    return most_square_mosaic(&[three_columns, top_top_bottom, left_left_right, left_right_right, top_bottom_bottom, three_rows]);
+    return most_square_mosaic(vec![three_columns, top_top_bottom, left_left_right, left_right_right, top_bottom_bottom, three_rows]);
 }
 
 fn build_3_mosaic(first: RgbImage, second: RgbImage, third: RgbImage) -> RgbImage {
@@ -642,7 +645,7 @@ fn best_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic
     let three_columns_211 = three_columns_211_4_mosaic(first, second, third, fourth);
     let three_columns_121 = three_columns_121_4_mosaic(first, second, third, fourth);
     let three_columns_112 = three_columns_112_4_mosaic(first, second, third, fourth);
-    return most_square_mosaic(&[four_columns, four_rows, two_rows_of_two, two_rows_one_three, two_rows_three_one, two_columns_of_two, two_columns_one_three, two_columns_three_one, three_rows_211, three_rows_121, three_rows_112, three_columns_211, three_columns_121, three_columns_112]);
+    return most_square_mosaic(vec![four_columns, four_rows, two_rows_of_two, two_rows_one_three, two_rows_three_one, two_columns_of_two, two_columns_one_three, two_columns_three_one, three_rows_211, three_rows_121, three_rows_112, three_columns_211, three_columns_121, three_columns_112]);
 }
 
 fn build_4_mosaic(first: RgbImage, second: RgbImage, third: RgbImage, fourth: RgbImage) -> RgbImage {
