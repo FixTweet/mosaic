@@ -428,6 +428,97 @@ pub struct Size {
     pub height: u32,
 }
 
+impl Size {
+    fn scale(&self, scale_factor: f32) -> Size {
+        Size {
+            width: self.width / scale_factor,
+            height: self.height / scale_factor,
+        }
+    }
+    fn add(&self, other: Size) -> Size {
+        Size {
+            width: self.width + other.width,
+            height: self.height + other.height,
+        }
+    }
+}
+
+pub struct ImageOffset {
+    pub offset: Size,
+    pub dimensions: Size,
+}
+
+impl ImageOffset {
+    fn scale(&self, scale_factor: f32) -> ImageOffset {
+        ImageOffset {
+            offset: self.offset.scale(scale_factor),
+            dimensions: self.dimensions.scale(scale_factor),
+        }
+    }
+}
+
+trait MosaicDims {
+    fn total_size(&self) -> Size;
+    fn scale(&self, scale_factor: f32) -> MosaicDims;
+}
+
+pub struct Mosaic2ImageDims {
+    pub image1: ImageOffset,
+    pub image2: ImageOffset,
+}
+
+impl MosaicDims for Mosaic2Dims {
+    fn total_size(&self) -> Size {
+        self.image2.offset.add(self.image2.dimensions)
+    }
+    fn scale(&self, scale_factor: f32) -> Mosaic2Dims {
+        Mosaic2Dims {
+            image1: self.image1.scale(scale_factor),
+            image2: self.image2.scale(scale_factor),
+        }
+    }
+}
+
+pub struct Mosaic3ImageDims {
+    pub image1: ImageOffset,
+    pub image2: ImageOffset,
+    pub image3: ImageOffset,
+}
+
+impl MosaicDims for Mosaic3Dims {
+    fn total_size(&self) -> Size {
+        self.image3.offset.add(self.image3.dimensions)
+    }
+    fn scale(&self, scale_factor: f32) -> Mosaic3Dims {
+        Mosaic3Dims {
+            image1: self.image1.scale(scale_factor),
+            image2: self.image2.scale(scale_factor),
+            image3: self.image3.scale(scale_factor),
+        }
+    }
+}
+
+pub struct Mosaic4ImageDims {
+    pub image1: ImageOffset,
+    pub image2: ImageOffset,
+    pub image3: ImageOffset,
+    pub image4: ImageOffset,
+}
+
+impl MosaicDims for Mosaic3Dims {
+    fn total_size(&self) -> Size {
+        self.image4.offset.add(self.image4.dimensions)
+    }
+    fn scale(&self, scale_factor: f32) -> Mosaic3Dims {
+        Mosaic3Dims {
+            image1: self.image1.scale(scale_factor),
+            image2: self.image2.scale(scale_factor),
+            image3: self.image3.scale(scale_factor),
+            image4: self.image4.scale(scale_factor),
+        }
+    }
+}
+
 pub struct HorizontalSize {
     pub width: u32,
     pub height: u32,
