@@ -157,6 +157,7 @@ impl Size {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct ImageOffset {
     pub offset: Size,
     pub dimensions: Size,
@@ -175,7 +176,10 @@ impl ImageOffset {
                 width: self.offset.width,
                 height: self.offset.height + height,
             },
-            dimensions: self.dimensions,
+            dimensions: Size {
+                width: self.dimensions.width,
+                height: self.dimensions.height,
+            },
         }
     }
     fn add_width(&self, width: u32) -> ImageOffset {
@@ -184,7 +188,10 @@ impl ImageOffset {
                 width: self.offset.width + width,
                 height: self.offset.height,
             },
-            dimensions: self.dimensions,
+            dimensions: Size {
+                width: self.dimensions.width,
+                height: self.dimensions.height,
+            },
         }
     }
     fn total_width(&self) -> u32 {
