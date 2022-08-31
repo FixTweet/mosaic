@@ -24,6 +24,7 @@
 
 use std::{collections::VecDeque, time::Instant};
 use std::cmp::Ordering::Equal;
+use std::iter::zip;
 
 use image::{imageops::FilterType, RgbImage};
 use tracing::instrument;
@@ -89,8 +90,8 @@ fn overall_scale_factor(size: Size) -> f32 {
     }
 }
 
-fn resize_images<const COUNT: usize>(images: [(RgbImage, Size); COUNT]) -> [RgbImage; COUNT] {
-    tracing::debug!("resizing {} images", COUNT);
+fn resize_images(images: Vec<(RgbImage, Size)>) -> Vec<RgbImage> {
+    tracing::debug!("resizing {} images", images.len());
 
     let span = tracing::Span::current();
 
@@ -272,6 +273,27 @@ fn best_2_mosaic(first: Size, second: Size) -> MosaicImageDims<2> {
     return *(most_square_mosaic(&[&top_bottom, &left_right]));
 }
 
+fn build_mosaic<const LEN: usize>(mosaic: MosaicImageDims<LEN>, images: [RgbImage; LEN]) -> RgbImage {
+    let total_size = mosaic.total_size();
+    let scale_factor = overall_scale_factor(total_size);
+    let scaled_mosaic = mosaic.scale(scale_factor);
+
+    let resize_args = zip(images, scaled_mosaic.images).map(|(image, offset)| {
+        (
+            image,
+            offset.dimensions,
+        )
+    }).collect();
+
+    let resized = resize_images(resize_args);
+
+    let mut background = create_background(scaled_mosaic.total_size());
+    for x in 0..LEN {
+        image::imageops::overlay(&mut background, &resized[x], scaled_mosaic.images[x].offset.width as i64, scaled_mosaic.images[x].offset.height as i64);
+    }
+    background
+}
+
 fn build_2_mosaic(first: RgbImage, second: RgbImage) -> RgbImage {
     let first_size = Size {
         width: first.width(),
@@ -282,25 +304,7 @@ fn build_2_mosaic(first: RgbImage, second: RgbImage) -> RgbImage {
         height: second.height(),
     };
     let best_mosaic = best_2_mosaic(first_size, second_size);
-    let total_size = best_mosaic.total_size();
-    let scale_factor = overall_scale_factor(total_size);
-    let scaled_mosaic = best_mosaic.scale(scale_factor);
-
-    let [first, second] = resize_images([
-        (
-            first,
-            scaled_mosaic.images[0].dimensions,
-        ),
-        (
-            second,
-            scaled_mosaic.images[1].dimensions,
-        )
-    ]);
-
-    let mut background = create_background(scaled_mosaic.total_size());
-    image::imageops::overlay(&mut background, &first, scaled_mosaic.images[0].offset.width as i64, scaled_mosaic.images[0].offset.height as i64);
-    image::imageops::overlay(&mut background, &second, scaled_mosaic.images[1].offset.width as i64, scaled_mosaic.images[1].offset.height as i64);
-    background
+    return build_mosaic(best_mosaic, [first, second]);
 }
 
 fn left_right_2_mosaic(first: Size, second: Size) -> MosaicImageDims<2> {
@@ -369,30 +373,7 @@ fn build_3_mosaic(first: RgbImage, second: RgbImage, third: RgbImage) -> RgbImag
         height: third.height(),
     };
     let best_mosaic = best_3_mosaic(first_size, second_size, third_size);
-    let total_size = best_mosaic.total_size();
-    let scale_factor = overall_scale_factor(total_size);
-    let scaled_mosaic = best_mosaic.scale(scale_factor);
-
-    let [first, second, third] = resize_images([
-        (
-            first,
-            scaled_mosaic.images[0].dimensions,
-        ),
-        (
-            second,
-            scaled_mosaic.images[1].dimensions,
-        ),
-        (
-            third,
-            scaled_mosaic.images[2].dimensions,
-        )
-    ]);
-
-    let mut background = create_background(scaled_mosaic.total_size());
-    image::imageops::overlay(&mut background, &first, scaled_mosaic.images[0].offset.width as i64, scaled_mosaic.images[0].offset.height as i64);
-    image::imageops::overlay(&mut background, &second, scaled_mosaic.images[1].offset.width as i64, scaled_mosaic.images[1].offset.height as i64);
-    image::imageops::overlay(&mut background, &third, scaled_mosaic.images[2].offset.width as i64, scaled_mosaic.images[2].offset.height as i64);
-    background
+    return build_mosaic(best_mosaic, [first, second, third]);
 }
 
 fn three_columns_3_mosaic(first: Size, second: Size, third: Size) -> MosaicImageDims<3> {
@@ -615,35 +596,7 @@ fn build_4_mosaic(first: RgbImage, second: RgbImage, third: RgbImage, fourth: Rg
         height: fourth.height(),
     };
     let best_mosaic = best_4_mosaic(first_size, second_size, third_size, fourth_size);
-    let total_size = best_mosaic.total_size();
-    let scale_factor = overall_scale_factor(total_size);
-    let scaled_mosaic = best_mosaic.scale(scale_factor);
-
-    let [first, second, third, fourth] = resize_images([
-        (
-            first,
-            scaled_mosaic.images[0].dimensions,
-        ),
-        (
-            second,
-            scaled_mosaic.images[1].dimensions,
-        ),
-        (
-            third,
-            scaled_mosaic.images[2].dimensions,
-        ),
-        (
-            fourth,
-            scaled_mosaic.images[3].dimensions,
-        ),
-    ]);
-
-    let mut background = create_background(scaled_mosaic.total_size());
-    image::imageops::overlay(&mut background, &first, scaled_mosaic.images[0].offset.width as i64, scaled_mosaic.images[0].offset.height as i64);
-    image::imageops::overlay(&mut background, &second, scaled_mosaic.images[1].offset.width as i64, scaled_mosaic.images[1].offset.height as i64);
-    image::imageops::overlay(&mut background, &third, scaled_mosaic.images[2].offset.width as i64, scaled_mosaic.images[2].offset.height as i64);
-    image::imageops::overlay(&mut background, &fourth, scaled_mosaic.images[3].offset.width as i64, scaled_mosaic.images[3].offset.height as i64);
-    background
+    return build_mosaic(best_mosaic, [first, second, third, fourth]);
 }
 
 fn four_columns_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> MosaicImageDims<4> {
