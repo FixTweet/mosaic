@@ -232,8 +232,8 @@ impl<const LEN: usize> MosaicDims for MosaicImageDims<LEN> {
     }
     fn scale(&self, scale_factor: f32) -> Self {
         let mut new_images = [ImageOffset::default(); LEN];
-        for x in 0..LEN {
-            new_images[x] = self.images[x].scale(scale_factor);
+        for (x, image) in self.images.iter().enumerate() {
+            new_images[x] = image.scale(scale_factor);
         }
         MosaicImageDims {
             images: new_images
@@ -241,8 +241,8 @@ impl<const LEN: usize> MosaicDims for MosaicImageDims<LEN> {
     }
     fn add_height(&self, height: u32) -> Self {
         let mut new_images = [ImageOffset::default(); LEN];
-        for x in 0..LEN {
-            new_images[x] = self.images[x].add_height(height);
+        for (x, image) in self.images.iter().enumerate() {
+            new_images[x] = image.add_height(height);
         }
         MosaicImageDims {
             images: new_images
@@ -250,8 +250,8 @@ impl<const LEN: usize> MosaicDims for MosaicImageDims<LEN> {
     }
     fn add_width(&self, width: u32) -> Self {
         let mut new_images = [ImageOffset::default(); LEN];
-        for x in 0..LEN {
-            new_images[x] = self.images[x].add_width(width);
+        for (x, image) in self.images.iter().enumerate() {
+            new_images[x] = image.add_width(width);
         }
         MosaicImageDims {
             images: new_images
@@ -288,8 +288,8 @@ fn build_mosaic<const LEN: usize>(mosaic: MosaicImageDims<LEN>, images: [RgbImag
     let resized = resize_images(resize_args);
 
     let mut background = create_background(scaled_mosaic.total_size());
-    for x in 0..LEN {
-        image::imageops::overlay(&mut background, &resized[x], scaled_mosaic.images[x].offset.width as i64, scaled_mosaic.images[x].offset.height as i64);
+    for (image, offset) in zip(resized, scaled_mosaic.images) {
+        image::imageops::overlay(&mut background, &image, offset.offset.width as i64, offset.offset.height as i64);
     }
     background
 }
