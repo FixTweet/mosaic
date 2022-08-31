@@ -219,6 +219,7 @@ trait MosaicDims {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Mosaic2ImageDims {
     pub image1: ImageOffset,
     pub image2: ImageOffset,
@@ -248,6 +249,7 @@ impl MosaicDims for Mosaic2ImageDims {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Mosaic3ImageDims {
     pub image1: ImageOffset,
     pub image2: ImageOffset,
@@ -281,6 +283,7 @@ impl MosaicDims for Mosaic3ImageDims {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Mosaic4ImageDims {
     pub image1: ImageOffset,
     pub image2: ImageOffset,
