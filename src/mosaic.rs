@@ -211,12 +211,11 @@ trait MosaicDims {
 
     fn unsquaredness(&self) -> f32 {
         let total_size = self.total_size();
-        let ratio = if total_size.width < total_size.height {
+        if total_size.width < total_size.height {
             total_size.height as f32 / total_size.width as f32
         } else {
             total_size.width as f32 / total_size.height as f32
-        };
-        ratio
+        }
     }
 }
 
