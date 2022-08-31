@@ -37,20 +37,20 @@ pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
         2 => {
             let first = images.pop_front().unwrap();
             let second = images.pop_front().unwrap();
-            return build_2_mosaic(first, second)
+            build_2_mosaic(first, second)
         }
         3 => {
             let first = images.pop_front().unwrap();
             let second = images.pop_front().unwrap();
             let third = images.pop_front().unwrap();
-            return build_3_mosaic(first, second, third)
+            build_3_mosaic(first, second, third)
         }
         4 => {
             let first = images.pop_front().unwrap();
             let second = images.pop_front().unwrap();
             let third = images.pop_front().unwrap();
             let fourth = images.pop_front().unwrap();
-            return build_4_mosaic(first, second, third, fourth)
+            build_4_mosaic(first, second, third, fourth)
         }
         _ => panic!("impossible image length"),
     }
@@ -196,10 +196,10 @@ impl ImageOffset {
         }
     }
     fn total_width(&self) -> u32 {
-        return self.offset.width + self.dimensions.width;
+        self.offset.width + self.dimensions.width
     }
     fn total_height(&self) -> u32 {
-        return self.offset.height + self.dimensions.height;
+        self.offset.height + self.dimensions.height
     }
 }
 
@@ -228,7 +228,7 @@ pub struct MosaicImageDims<const LEN: usize> {
 impl<const LEN: usize> MosaicDims for MosaicImageDims<LEN> {
     fn total_size(&self) -> Size {
         let last = self.images.last().unwrap();
-        return last.offset.add(last.dimensions);
+        last.offset.add(last.dimensions)
     }
     fn scale(&self, scale_factor: f32) -> Self {
         let mut new_images = [ImageOffset::default(); LEN];
@@ -263,7 +263,7 @@ fn most_square_mosaic<'b,T: MosaicDims>(mosaics: &[&'b T]) -> &'b T {
     mosaics.iter().min_by(|mosaic_a, mosaic_b| {
         let ratio_a = mosaic_a.unsquaredness();
         let ratio_b = mosaic_b.unsquaredness();
-        return ratio_a.partial_cmp(&ratio_b).unwrap_or(Equal);
+        ratio_a.partial_cmp(&ratio_b).unwrap_or(Equal)
     }).unwrap()
 }
 
@@ -304,7 +304,7 @@ fn build_2_mosaic(first: RgbImage, second: RgbImage) -> RgbImage {
         height: second.height(),
     };
     let best_mosaic = best_2_mosaic(first_size, second_size);
-    return build_mosaic(best_mosaic, [first, second]);
+    build_mosaic(best_mosaic, [first, second])
 }
 
 fn left_right_2_mosaic(first: Size, second: Size) -> MosaicImageDims<2> {
@@ -373,7 +373,7 @@ fn build_3_mosaic(first: RgbImage, second: RgbImage, third: RgbImage) -> RgbImag
         height: third.height(),
     };
     let best_mosaic = best_3_mosaic(first_size, second_size, third_size);
-    return build_mosaic(best_mosaic, [first, second, third]);
+    build_mosaic(best_mosaic, [first, second, third])
 }
 
 fn three_columns_3_mosaic(first: Size, second: Size, third: Size) -> MosaicImageDims<3> {
@@ -596,7 +596,7 @@ fn build_4_mosaic(first: RgbImage, second: RgbImage, third: RgbImage, fourth: Rg
         height: fourth.height(),
     };
     let best_mosaic = best_4_mosaic(first_size, second_size, third_size, fourth_size);
-    return build_mosaic(best_mosaic, [first, second, third, fourth]);
+    build_mosaic(best_mosaic, [first, second, third, fourth])
 }
 
 fn four_columns_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> MosaicImageDims<4> {
