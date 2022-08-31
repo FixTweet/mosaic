@@ -110,7 +110,7 @@ fn resize_images(images: Vec<(RgbImage, Size)>) -> Vec<RgbImage> {
         .map(|thread| thread.join().unwrap())
         .collect();
 
-    images.try_into().unwrap()
+    images
 }
 
 #[instrument(skip(image, size))]
