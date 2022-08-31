@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-use std::{collections::VecDeque, time::Instant};
+use std::time::Instant;
 use std::cmp::Ordering::Equal;
 use std::iter::zip;
 
@@ -32,24 +32,24 @@ use tracing::instrument;
 const SPACING_SIZE: u32 = 10;
 const MAX_SIZE: u32 = 4000;
 
-pub fn mosaic(mut images: VecDeque<RgbImage>) -> RgbImage {
+pub fn mosaic(mut images: Vec<RgbImage>) -> RgbImage {
     match images.len() {
         2 => {
-            let first = images.pop_front().unwrap();
-            let second = images.pop_front().unwrap();
+            let second = images.pop().unwrap();
+            let first = images.pop().unwrap();
             build_2_mosaic(first, second)
         }
         3 => {
-            let first = images.pop_front().unwrap();
-            let second = images.pop_front().unwrap();
-            let third = images.pop_front().unwrap();
+            let third = images.pop().unwrap();
+            let second = images.pop().unwrap();
+            let first = images.pop().unwrap();
             build_3_mosaic(first, second, third)
         }
         4 => {
-            let first = images.pop_front().unwrap();
-            let second = images.pop_front().unwrap();
-            let third = images.pop_front().unwrap();
-            let fourth = images.pop_front().unwrap();
+            let fourth = images.pop().unwrap();
+            let third = images.pop().unwrap();
+            let second = images.pop().unwrap();
+            let first = images.pop().unwrap();
             build_4_mosaic(first, second, third, fourth)
         }
         _ => panic!("impossible image length"),
