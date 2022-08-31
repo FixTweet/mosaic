@@ -949,3 +949,120 @@ fn three_columns_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Si
         ],
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use image::{Rgb, RgbImage};
+    use crate::mosaic;
+
+    const BLACK: Rgb<u8> = Rgb([0, 0, 0]);
+    const RED: Rgb<u8> = Rgb([255, 0, 0]);
+    const BLUE: Rgb<u8> = Rgb([0, 0, 255]);
+    const GREEN: Rgb<u8> = Rgb([0, 255, 0]);
+    const PURPLE: Rgb<u8> = Rgb([255, 64, 255]);
+    const TEST_RESULT_DIR: &str = "./mosaic_tests/";
+
+    fn create_with_colour(width: u32, height: u32, colour: Rgb<u8>) -> RgbImage {
+        let mut img = RgbImage::new(width, height);
+
+        for x in 0..width {
+            for y in 0..height {
+                img.put_pixel(x, y, colour);
+                img.put_pixel(x, y, colour);
+            }
+        }
+
+        img
+    }
+
+    fn is_colour_at_pixel(x: u32, y: u32, image: &RgbImage, colour: Rgb<u8>) -> bool {
+        image.get_pixel(x, y).eq(&colour)
+    }
+
+    fn is_colour_in_range(start_x: u32, start_y: u32, end_x: u32, end_y: u32, image: &RgbImage, colour: Rgb<u8>) -> bool {
+        for x in start_x..end_x {
+            for y in start_y..end_y {
+                if !is_colour_at_pixel(x, y, image, colour) {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    fn has_black_vertical_line(x: u32, image: &RgbImage) -> bool {
+        is_colour_in_range(x, 0, x, image.height(), image, BLACK)
+    }
+
+    fn has_black_horizontal_line(y: u32, image: &RgbImage) -> bool {
+        is_colour_in_range(0, y, image.width(), y, image, BLACK)
+    }
+
+    fn save_result(result: RgbImage, filename: &str) {
+        let file_path = [TEST_RESULT_DIR, filename, ".png"].join("");
+        fs::create_dir_all(TEST_RESULT_DIR).unwrap();
+        result.save(file_path).unwrap();
+    }
+
+    #[test]
+    fn mosaic_2_left_right() {
+        let left = create_with_colour(100, 400, RED);
+        let right = create_with_colour(200, 400, BLUE);
+
+        let result = mosaic(vec![left, right]);
+
+        assert!(is_colour_in_range(0, 0, 100, 400, &result, RED));
+        assert!(is_colour_in_range(120, 0, 300, 400, &result, BLUE));
+        assert!(has_black_vertical_line(105, &result));
+        save_result(result, "2-left_right");
+    }
+
+    #[test]
+    fn mosaic_2_top_bottom() {
+        let top = create_with_colour(400, 200, RED);
+        let bottom = create_with_colour(400, 100, BLUE);
+
+        let result = mosaic(vec![top, bottom]);
+
+        assert!(is_colour_in_range(0, 0, 400, 200, &result, RED));
+        assert!(is_colour_in_range(0, 220, 400, 300, &result, BLUE));
+        assert!(has_black_horizontal_line(205, &result));
+        save_result(result, "2-top_bottom");
+    }
+
+    #[test]
+    fn mosaic_3_three_cols() {
+        let left = create_with_colour(100, 400, RED);
+        let mid = create_with_colour(200, 400, BLUE);
+        let right = create_with_colour(100, 400, GREEN);
+
+        let result = mosaic(vec![left, mid, right]);
+
+        assert!(is_colour_in_range(0, 0, 100, 400, &result, RED));
+        assert!(has_black_vertical_line(105, &result));
+        assert!(is_colour_in_range(120, 0,300, 400, &result, BLUE));
+        assert!(has_black_vertical_line(315, &result));
+        assert!(is_colour_in_range(330, 0, 400, 400, &result, GREEN));
+        save_result(result, "3-three_cols");
+    }
+
+    #[test]
+    fn mosaic_4_four_cols() {
+        let col1 = create_with_colour(100, 400, RED);
+        let col2 = create_with_colour(100, 400, BLUE);
+        let col3 = create_with_colour(100, 400, GREEN);
+        let col4 = create_with_colour(100, 400, PURPLE);
+
+        let result = mosaic(vec![col1, col2, col3, col4]);
+
+        assert!(is_colour_in_range(0, 0, 100, 400, &result, RED));
+        assert!(has_black_vertical_line(105, &result));
+        assert!(is_colour_in_range(120, 0,200, 400, &result, BLUE));
+        assert!(has_black_vertical_line(215, &result));
+        assert!(is_colour_in_range(230, 0, 300, 400, &result, GREEN));
+        assert!(has_black_vertical_line(325, &result));
+        assert!(is_colour_in_range(340, 0, 400, 400, &result, PURPLE));
+        save_result(result, "4-four_cols");
+    }
+}
