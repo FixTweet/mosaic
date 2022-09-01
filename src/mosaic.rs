@@ -261,7 +261,6 @@ impl<const LEN: usize> MosaicDims for MosaicImageDims<LEN> {
         if biggest > MAX_SIZE {
             let scale_factor = biggest as f32 / MAX_SIZE as f32;
             scaled_mosaic = scaled_mosaic.scale(scale_factor);
-            let new_size = scaled_mosaic.total_size();
         }
         scaled_mosaic
     }
