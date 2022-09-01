@@ -623,15 +623,16 @@ fn best_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic
     let two_rows_of_two = two_rows_of_two_4_mosaic(first, second, third, fourth);
     let two_rows_one_three = two_rows_one_three_4_mosaic(first, second, third, fourth);
     let two_rows_three_one = two_rows_three_one_4_mosaic(first, second, third, fourth);
-    let two_columns_of_two = two_columns_of_two_4_mosaic(first, second, third, fourth);
     let two_columns_one_three = two_columns_one_three_4_mosaic(first, second, third, fourth);
     let two_columns_three_one = two_columns_three_one_4_mosaic(first, second, third, fourth);
     let three_rows_211 = three_rows_211_4_mosaic(first, second, third, fourth);
     let three_rows_121 = three_rows_121_4_mosaic(first, second, third, fourth);
     let three_rows_112 = three_rows_112_4_mosaic(first, second, third, fourth);
-    let three_columns_211 = three_columns_211_4_mosaic(first, second, third, fourth);
-    let three_columns_121 = three_columns_121_4_mosaic(first, second, third, fourth);
-    let three_columns_112 = three_columns_112_4_mosaic(first, second, third, fourth);
+    // These four are omitted from the options, as they are just not very readable
+    //let two_columns_of_two = two_columns_of_two_4_mosaic(first, second, third, fourth);
+    //let three_columns_211 = three_columns_211_4_mosaic(first, second, third, fourth);
+    //let three_columns_121 = three_columns_121_4_mosaic(first, second, third, fourth);
+    //let three_columns_112 = three_columns_112_4_mosaic(first, second, third, fourth);
     return best_mosaic(&[&four_columns, &four_rows, &two_rows_of_two, &two_rows_one_three, &two_rows_three_one, &two_columns_one_three, &two_columns_three_one, &three_rows_211, &three_rows_121, &three_rows_112]);
 }
 
@@ -799,6 +800,7 @@ fn two_rows_three_one_4_mosaic(first: Size, second: Size, third: Size, fourth: S
     }
 }
 
+#[allow(dead_code)]
 fn two_columns_of_two_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> MosaicImageDims<4> {
     let first_col = top_bottom_2_mosaic(first, second);
     let second_col = top_bottom_2_mosaic(third, fourth);
@@ -945,6 +947,7 @@ fn three_rows_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size)
     }
 }
 
+#[allow(dead_code)]
 fn three_columns_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> MosaicImageDims<4> {
     let first_col = top_bottom_2_mosaic(first, second);
     let image3_offset = ImageOffset {
@@ -973,6 +976,7 @@ fn three_columns_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Si
     }
 }
 
+#[allow(dead_code)]
 fn three_columns_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> MosaicImageDims<4> {
     let second_col = top_bottom_2_mosaic(second, third);
     let image1_offset = ImageOffset {
@@ -1002,6 +1006,7 @@ fn three_columns_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Si
     }
 }
 
+#[allow(dead_code)]
 fn three_columns_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> MosaicImageDims<4> {
     let third_col = top_bottom_2_mosaic(third, fourth);
     let image1_offset = ImageOffset {
