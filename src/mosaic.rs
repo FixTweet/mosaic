@@ -300,11 +300,7 @@ fn best_2_mosaic(first: Size, second: Size) -> MosaicImageDims<2> {
 }
 
 fn build_mosaic<const LEN: usize>(mosaic: MosaicImageDims<LEN>, images: [RgbImage; LEN]) -> RgbImage {
-    let total_size = mosaic.total_size();
-    let scale_factor = overall_scale_factor(total_size);
-    let scaled_mosaic = mosaic.scale(scale_factor);
-
-    let resize_args = zip(images, scaled_mosaic.images).map(|(image, offset)| {
+    let resize_args = zip(images, mosaic.images).map(|(image, offset)| {
         (
             image,
             offset.dimensions,
@@ -313,8 +309,8 @@ fn build_mosaic<const LEN: usize>(mosaic: MosaicImageDims<LEN>, images: [RgbImag
 
     let resized = resize_images(resize_args);
 
-    let mut background = create_background(scaled_mosaic.total_size());
-    for (image, offset) in zip(resized, scaled_mosaic.images) {
+    let mut background = create_background(mosaic.total_size());
+    for (image, offset) in zip(resized, mosaic.images) {
         image::imageops::overlay(&mut background, &image, offset.offset.width as i64, offset.offset.height as i64);
     }
     background
