@@ -1374,4 +1374,49 @@ mod tests {
         assert!(has_black_vertical_line_partial(305, 420, 600, &result));
         assert!(is_colour_in_range(320, 430, 600, 600, &result, PURPLE));
     }
+
+    #[test]
+    fn pick_less_square_option_for_better_scaling_ratio() {
+        let top_left = create_with_colour(100, 100, RED);
+        let top_right = create_with_colour(300, 100, BLUE);
+        let bot_left = create_with_colour(300, 100, GREEN);
+        let bot_right = create_with_colour(100, 100, PURPLE);
+
+        let result = mosaic(vec![top_left, top_right, bot_left, bot_right]);
+
+        save_result(&result, "less_square_better_scaling_ratio");
+        assert!(is_colour_in_range(0, 0, 100, 100, &result, RED));
+        assert!(has_black_vertical_line_partial(105, 0, 100, &result));
+        assert!(is_colour_in_range(120, 0, 400, 100, &result, BLUE));
+        assert!(has_black_horizontal_line(105, &result));
+        assert!(is_colour_in_range(0, 120, 300, 200, &result, GREEN));
+        assert!(has_black_vertical_line_partial(305, 120, 200, &result));
+        assert!(is_colour_in_range(320, 120, 400, 200, &result, PURPLE));
+    }
+
+    #[test]
+    fn wont_scale_down_to_match() {
+        let left = create_with_colour(100, 200, RED);
+        let right = create_with_colour(200, 400, BLUE);
+
+        let result = mosaic(vec![left, right]);
+
+        save_result(&result, "wont_scale_down_to_match");
+        assert!(is_colour_in_range(0, 0, 200, 400, &result, RED));
+        assert!(has_black_vertical_line(205, &result));
+        assert!(is_colour_in_range(220, 0, 400, 400, &result, BLUE));
+    }
+
+    #[test]
+    fn scale_down_to_fit() {
+        let left = create_with_colour(3000, 3300, RED);
+        let right = create_with_colour(3000, 3300, BLUE);
+
+        let result = mosaic(vec![left, right]);
+
+        save_result(&result, "scale_down_to_fit");
+        assert!(is_colour_in_range(0, 0, 1980, 2180, &result, RED));
+        assert!(has_black_vertical_line(2000, &result));
+        assert!(is_colour_in_range(2020, 0, 4000, 2180, &result, BLUE));
+    }
 }
