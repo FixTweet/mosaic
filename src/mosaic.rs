@@ -845,7 +845,7 @@ fn three_rows_211_4_mosaic(first: Size, second: Size, third: Size, fourth: Size)
             ImageOffset {
                 offset: Size {
                     width: 0,
-                    height: image3_offset.total_height(),
+                    height: image3_offset.total_height() + SPACING_SIZE,
                 },
                 dimensions: scale_width_dimension(fourth, first_row.total_size().width),
                 original_dimensions: fourth,
