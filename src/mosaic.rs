@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+use std::cmp::max;
 use std::time::Instant;
 use std::cmp::Ordering::Equal;
 use std::iter::zip;
@@ -73,20 +74,6 @@ fn scale_width_dimension(image_size: Size, other_width: u32) -> Size {
     Size {
         width: other_width,
         height: (image_size.height as f32 / scale_factor).round() as u32,
-    }
-}
-
-fn overall_scale_factor(size: Size) -> f32 {
-    let biggest = if size.width > size.height {
-        size.width
-    } else {
-        size.height
-    };
-
-    if biggest > MAX_SIZE {
-        biggest as f32 / MAX_SIZE as f32
-    } else {
-        1.0
     }
 }
 
@@ -210,6 +197,11 @@ impl ImageOffset {
 trait MosaicDims {
     fn total_size(&self) -> Size;
     fn scale(&self, scale_factor: f32) -> Self;
+    fn image_scale_factors(&self) -> Vec<f32>;
+    fn min_scale_factor(&self) -> f32;
+    fn max_scale_factor(&self) -> f32;
+    fn scale_factor_ratio(&self) -> f32;
+    fn scale_to_fit(&self) -> Self;
     fn add_height(&self, height: u32) -> Self;
     fn add_width(&self, width: u32) -> Self;
 
@@ -241,6 +233,37 @@ impl<const LEN: usize> MosaicDims for MosaicImageDims<LEN> {
         MosaicImageDims {
             images: new_images
         }
+    }
+    fn image_scale_factors(&self) -> Vec<f32> {
+        self.images.iter().map(|image| {
+            image.dimensions.width as f32 / image.original_dimensions.width as f32
+        }).collect()
+    }
+    fn min_scale_factor(&self) -> f32 {
+        *(self.image_scale_factors().iter().min_by(|a, b| {
+            a.partial_cmp(&b).unwrap_or(Equal)
+        }).unwrap())
+    }
+    fn max_scale_factor(&self) -> f32 {
+        *self.image_scale_factors().iter().max_by(|a, b| {
+            a.partial_cmp(&b).unwrap_or(Equal)
+        }).unwrap()
+    }
+    fn scale_factor_ratio(&self) -> f32 {
+        self.max_scale_factor() / self.min_scale_factor()
+    }
+    fn scale_to_fit(&self) -> Self {
+        // Scale mosaic so that the smallest image is 1:1 scale
+        let mut scaled_mosaic = self.scale(self.min_scale_factor());
+        // Scale down to fit into maximum dimensions
+        let total_size = scaled_mosaic.total_size();
+        let biggest = max(total_size.width, total_size.height);
+        if biggest > MAX_SIZE {
+            let scale_factor = biggest as f32 / MAX_SIZE as f32;
+            scaled_mosaic = scaled_mosaic.scale(scale_factor);
+            let new_size = scaled_mosaic.total_size();
+        }
+        scaled_mosaic
     }
     fn add_height(&self, height: u32) -> Self {
         let mut new_images = [ImageOffset::default(); LEN];
