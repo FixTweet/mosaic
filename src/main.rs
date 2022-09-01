@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-use std::collections::VecDeque;
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
 
@@ -66,7 +65,7 @@ async fn handle(
     tracing::info!(image_type = ?path.image_type, "given image ids: {}", image_ids.join(", "));
 
     let start = Instant::now();
-    let images: VecDeque<_> = futures::future::join_all(
+    let images: Vec<_> = futures::future::join_all(
         image_ids
             .iter()
             .map(|image_id| fetch_image(&client, image_id)),
