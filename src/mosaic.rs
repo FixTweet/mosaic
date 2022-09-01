@@ -1456,4 +1456,20 @@ mod tests {
         assert!(has_black_vertical_line(2000, &result));
         assert!(is_colour_in_range(2020, 0, 4000, 2180, &result, BLUE));
     }
+
+    #[test]
+    fn doesnt_attempt_removed_mosaic() {
+        let left_top = create_with_colour(200, 300, RED);
+        let left_bot = create_with_colour(200, 300, BLUE);
+        let mid = create_with_colour(200, 600, GREEN);
+        let right = create_with_colour(200, 600, PURPLE);
+
+        let result = mosaic(vec![left_top, left_bot, mid, right]);
+
+        save_result(&result, "doesnt_attempt_removed_mosaic");
+        assert!((result.width() < 590) | (result.width() > 630));
+        assert!((result.width() < 590) | (result.width() > 630));
+        assert!(has_black_horizontal_line(305, &result));
+        assert!(has_black_vertical_line(205, &result));
+    }
 }
