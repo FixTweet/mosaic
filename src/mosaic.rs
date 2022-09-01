@@ -284,8 +284,22 @@ impl<const LEN: usize> MosaicDims for MosaicImageDims<LEN> {
     }
 }
 
-fn most_square_mosaic<'b,T: MosaicDims>(mosaics: &[&'b T]) -> &'b T {
-    mosaics.iter().min_by(|mosaic_a, mosaic_b| {
+fn best_mosaic<T: MosaicDims + Copy>(mosaics: &[&T]) -> T {
+    // Ensure all mosaics have a minimum scaling ratio of 1, and fit within the box
+    let scaled_mosaics: Vec<T> = mosaics.iter().map(|mosaic| {
+        mosaic.scale_to_fit()
+    }).collect();
+    // Find the lowest scaling ratio, to discard mosaics with a scaling ratio 50% higher than that
+    let min_scale_factor_ratio = scaled_mosaics.iter().map(|mosaic| {
+        mosaic.scale_factor_ratio()
+    }).min_by(|a, b| {
+        a.partial_cmp(&b).unwrap_or(Equal)
+    }).unwrap();
+    let scale_factor_ratio_cap = min_scale_factor_ratio + 0.5;
+    // Then select squarest within 50% of that
+    *scaled_mosaics.iter().filter(|mosaic| {
+        mosaic.scale_factor_ratio() < scale_factor_ratio_cap
+    }).min_by(|mosaic_a, mosaic_b| {
         let ratio_a = mosaic_a.unsquaredness();
         let ratio_b = mosaic_b.unsquaredness();
         ratio_a.partial_cmp(&ratio_b).unwrap_or(Equal)
@@ -295,7 +309,7 @@ fn most_square_mosaic<'b,T: MosaicDims>(mosaics: &[&'b T]) -> &'b T {
 fn best_2_mosaic(first: Size, second: Size) -> MosaicImageDims<2> {
     let top_bottom = top_bottom_2_mosaic(first, second);
     let left_right = left_right_2_mosaic(first, second);
-    return *(most_square_mosaic(&[&top_bottom, &left_right]));
+    return best_mosaic(&[&top_bottom, &left_right]);
 }
 
 fn build_mosaic<const LEN: usize>(mosaic: MosaicImageDims<LEN>, images: [RgbImage; LEN]) -> RgbImage {
@@ -381,7 +395,7 @@ fn best_3_mosaic(first: Size, second: Size, third: Size) -> MosaicImageDims<3> {
     let left_left_right = left_left_right_3_mosaic(first, second, third);
     let top_bottom_bottom = top_bottom_bottom_3_mosaic(first, second, third);
     let three_rows = three_rows_3_mosaic(first, second, third);
-    return *(most_square_mosaic(&[&three_columns, &top_top_bottom, &left_left_right, &left_right_right, &top_bottom_bottom, &three_rows]));
+    return best_mosaic(&[&three_columns, &top_top_bottom, &left_left_right, &left_right_right, &top_bottom_bottom, &three_rows]);
 }
 
 fn build_3_mosaic(first: RgbImage, second: RgbImage, third: RgbImage) -> RgbImage {
@@ -618,7 +632,7 @@ fn best_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic
     let three_columns_211 = three_columns_211_4_mosaic(first, second, third, fourth);
     let three_columns_121 = three_columns_121_4_mosaic(first, second, third, fourth);
     let three_columns_112 = three_columns_112_4_mosaic(first, second, third, fourth);
-    return *(most_square_mosaic(&[&four_columns, &four_rows, &two_rows_of_two, &two_rows_one_three, &two_rows_three_one, &two_columns_of_two, &two_columns_one_three, &two_columns_three_one, &three_rows_211, &three_rows_121, &three_rows_112, &three_columns_211, &three_columns_121, &three_columns_112]));
+    return best_mosaic(&[&four_columns, &four_rows, &two_rows_of_two, &two_rows_one_three, &two_rows_three_one, &two_columns_one_three, &two_columns_three_one, &three_rows_211, &three_rows_121, &three_rows_112]);
 }
 
 fn build_4_mosaic(first: RgbImage, second: RgbImage, third: RgbImage, fourth: RgbImage) -> RgbImage {
