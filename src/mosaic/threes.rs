@@ -240,3 +240,117 @@ pub fn three_rows_3_mosaic(first: Size, second: Size, third: Size) -> MosaicImag
         ],
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use crate::mosaic;
+    use crate::mosaic::testutils::{
+        BLUE,
+        create_with_colour,
+        GREEN,
+        has_black_horizontal_line,
+        has_black_horizontal_line_partial,
+        has_black_vertical_line,
+        has_black_vertical_line_partial,
+        is_colour_in_range,
+        RED,
+        save_result,
+    };
+
+    #[test]
+    fn mosaic_3_three_cols() {
+        let left = create_with_colour(100, 400, RED);
+        let mid = create_with_colour(200, 400, BLUE);
+        let right = create_with_colour(100, 400, GREEN);
+
+        let result = mosaic(vec![left, mid, right]);
+
+        save_result(&result, "3-three_cols");
+        assert!(is_colour_in_range(0, 0, 100, 400, &result, RED));
+        assert!(has_black_vertical_line(105, &result));
+        assert!(is_colour_in_range(120, 0, 300, 400, &result, BLUE));
+        assert!(has_black_vertical_line(315, &result));
+        assert!(is_colour_in_range(330, 0, 400, 400, &result, GREEN));
+    }
+
+    #[test]
+    fn mosaic_3_top_top_bottom() {
+        let top_left = create_with_colour(200, 300, RED);
+        let top_right = create_with_colour(200, 300, BLUE);
+        let bottom = create_with_colour(400, 100, GREEN);
+
+        let result = mosaic(vec![top_left, top_right, bottom]);
+
+        save_result(&result, "3-top_top_bottom");
+        assert!(is_colour_in_range(0, 0, 200, 300, &result, RED));
+        assert!(has_black_vertical_line_partial(205, 0, 300, &result));
+        assert!(is_colour_in_range(220, 0, 400, 300, &result, BLUE));
+        assert!(has_black_horizontal_line(305, &result));
+        assert!(is_colour_in_range(0, 320, 400, 400, &result, GREEN));
+    }
+
+    #[test]
+    fn mosaic_3_left_left_right() {
+        let left_top = create_with_colour(300, 200, RED);
+        let left_bot = create_with_colour(300, 200, BLUE);
+        let right = create_with_colour(100, 400, GREEN);
+
+        let result = mosaic(vec![left_top, left_bot, right]);
+
+        save_result(&result, "3-left_left_right");
+        assert!(is_colour_in_range(0, 0, 300, 200, &result, RED));
+        assert!(has_black_horizontal_line_partial(205, 0, 300, &result));
+        assert!(is_colour_in_range(0, 220, 300, 400, &result, BLUE));
+        assert!(has_black_vertical_line(305, &result));
+        assert!(is_colour_in_range(320, 0, 400, 400, &result, GREEN));
+    }
+
+    #[test]
+    fn mosaic_3_left_right_right() {
+        let left = create_with_colour(100, 400, RED);
+        let right_top = create_with_colour(300, 200, BLUE);
+        let right_bot = create_with_colour(300, 200, GREEN);
+
+        let result = mosaic(vec![left, right_top, right_bot]);
+
+        save_result(&result, "3-left_right_right");
+        assert!(is_colour_in_range(0, 0, 100, 400, &result, RED));
+        assert!(has_black_vertical_line(105, &result));
+        assert!(is_colour_in_range(120, 0, 400, 200, &result, BLUE));
+        assert!(has_black_horizontal_line_partial(205, 120, 400, &result));
+        assert!(is_colour_in_range(120, 220, 400, 400, &result, GREEN));
+    }
+
+    #[test]
+    fn mosaic_3_top_bottom_bottom() {
+        let top = create_with_colour(400, 100, RED);
+        let bot_left = create_with_colour(200, 300, BLUE);
+        let bot_right = create_with_colour(200, 300, GREEN);
+
+        let result = mosaic(vec![top, bot_left, bot_right]);
+
+        save_result(&result, "3-top_bottom_bottom");
+        assert!(is_colour_in_range(0, 0, 400, 100, &result, RED));
+        assert!(has_black_horizontal_line(105, &result));
+        assert!(is_colour_in_range(0, 120, 200, 400, &result, BLUE));
+        assert!(has_black_vertical_line_partial(205, 120, 400, &result));
+        assert!(is_colour_in_range(220, 120, 400, 400, &result, GREEN));
+    }
+
+    #[test]
+    fn mosaic_3_three_rows() {
+        let row1 = create_with_colour(300, 100, RED);
+        let row2 = create_with_colour(300, 100, BLUE);
+        let row3 = create_with_colour(300, 100, GREEN);
+
+        let result = mosaic(vec![row1, row2, row3]);
+
+        save_result(&result, "3-three_rows");
+        assert!(is_colour_in_range(0, 0, 300, 100, &result, RED));
+        assert!(has_black_horizontal_line(105, &result));
+        assert!(is_colour_in_range(0, 120, 300, 200, &result, BLUE));
+        assert!(has_black_horizontal_line(215, &result));
+        assert!(is_colour_in_range(0, 230, 300, 300, &result, GREEN));
+    }
+}

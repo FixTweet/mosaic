@@ -75,3 +75,43 @@ pub fn top_bottom_2_mosaic(first: Size, second: Size) -> MosaicImageDims<2> {
         ]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::mosaic;
+    use crate::mosaic::testutils::{
+        BLUE,
+        create_with_colour,
+        has_black_horizontal_line,
+        has_black_vertical_line,
+        is_colour_in_range,
+        RED,
+        save_result,
+    };
+
+    #[test]
+    fn mosaic_2_left_right() {
+        let left = create_with_colour(100, 400, RED);
+        let right = create_with_colour(200, 400, BLUE);
+
+        let result = mosaic(vec![left, right]);
+
+        save_result(&result, "2-left_right");
+        assert!(is_colour_in_range(0, 0, 100, 400, &result, RED));
+        assert!(is_colour_in_range(120, 0, 300, 400, &result, BLUE));
+        assert!(has_black_vertical_line(105, &result));
+    }
+
+    #[test]
+    fn mosaic_2_top_bottom() {
+        let top = create_with_colour(400, 200, RED);
+        let bottom = create_with_colour(400, 100, BLUE);
+
+        let result = mosaic(vec![top, bottom]);
+
+        save_result(&result, "2-top_bottom");
+        assert!(is_colour_in_range(0, 0, 400, 200, &result, RED));
+        assert!(is_colour_in_range(0, 220, 400, 300, &result, BLUE));
+        assert!(has_black_horizontal_line(205, &result));
+    }
+}
