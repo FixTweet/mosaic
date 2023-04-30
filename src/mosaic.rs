@@ -23,9 +23,9 @@
  */
 
 use std::cmp::max;
-use std::time::Instant;
 use std::cmp::Ordering::Equal;
 use std::iter::zip;
+use std::time::Instant;
 
 use image::{imageops::FilterType, RgbImage};
 use tracing::instrument;
@@ -217,7 +217,7 @@ trait MosaicDims {
 
 #[derive(Clone, Copy)]
 pub struct MosaicImageDims<const LEN: usize> {
-    images: [ImageOffset; LEN]
+    images: [ImageOffset; LEN],
 }
 
 impl<const LEN: usize> MosaicDims for MosaicImageDims<LEN> {
@@ -289,13 +289,16 @@ fn best_mosaic<T: MosaicDims + Copy>(mosaics: &[&T]) -> T {
     let scaled_mosaics: Vec<T> = mosaics.iter().map(|mosaic| {
         mosaic.scale_to_fit()
     }).collect();
+
     // Find the lowest scaling ratio, to discard mosaics with a scaling ratio 50% higher than that
     let min_scale_factor_ratio = scaled_mosaics.iter().map(|mosaic| {
         mosaic.scale_factor_ratio()
     }).min_by(|a, b| {
         a.partial_cmp(&b).unwrap_or(Equal)
     }).unwrap();
+
     let scale_factor_ratio_cap = min_scale_factor_ratio + 0.5;
+
     // Then select squarest within 50% of that
     *scaled_mosaics.iter().filter(|mosaic| {
         mosaic.scale_factor_ratio() < scale_factor_ratio_cap
@@ -419,7 +422,7 @@ fn three_columns_3_mosaic(first: Size, second: Size, third: Size) -> MosaicImage
     let image2_offset = ImageOffset {
         offset: Size {
             width: first.width + SPACING_SIZE,
-            height: 0
+            height: 0,
         },
         dimensions: scale_height_dimension(second, first.height),
         original_dimensions: second,
@@ -439,7 +442,7 @@ fn three_columns_3_mosaic(first: Size, second: Size, third: Size) -> MosaicImage
             ImageOffset {
                 offset: Size {
                     width: image2_offset.total_width() + SPACING_SIZE,
-                    height: 0
+                    height: 0,
                 },
                 dimensions: scale_height_dimension(third, first.height),
                 original_dimensions: third,
@@ -452,7 +455,7 @@ fn top_top_bottom_3_mosaic(first: Size, second: Size, third: Size) -> MosaicImag
     let image2_offset = ImageOffset {
         offset: Size {
             width: first.width + SPACING_SIZE,
-            height: 0
+            height: 0,
         },
         dimensions: scale_height_dimension(second, first.height),
         original_dimensions: second,
@@ -525,6 +528,7 @@ fn left_right_right_3_mosaic(first: Size, second: Size, third: Size) -> MosaicIm
         dimensions: second,
         original_dimensions: second,
     };
+
     let image3_offset = ImageOffset {
         offset: Size {
             width: image1_dims.width + SPACING_SIZE,
@@ -629,30 +633,29 @@ fn best_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> Mosaic
     let three_rows_121 = three_rows_121_4_mosaic(first, second, third, fourth);
     let three_rows_112 = three_rows_112_4_mosaic(first, second, third, fourth);
     // These four are omitted from the options, as they are just not very readable
-    //let two_columns_of_two = two_columns_of_two_4_mosaic(first, second, third, fourth);
-    //let three_columns_211 = three_columns_211_4_mosaic(first, second, third, fourth);
-    //let three_columns_121 = three_columns_121_4_mosaic(first, second, third, fourth);
-    //let three_columns_112 = three_columns_112_4_mosaic(first, second, third, fourth);
-    return best_mosaic(&[&four_columns, &four_rows, &two_rows_of_two, &two_rows_one_three, &two_rows_three_one, &two_columns_one_three, &two_columns_three_one, &three_rows_211, &three_rows_121, &three_rows_112]);
+    // let two_columns_of_two = two_columns_of_two_4_mosaic(first, second, third, fourth);
+    // let three_columns_211 = three_columns_211_4_mosaic(first, second, third, fourth);
+    // let three_columns_121 = three_columns_121_4_mosaic(first, second, third, fourth);
+    // let three_columns_112 = three_columns_112_4_mosaic(first, second, third, fourth);
+    return best_mosaic(&[
+        &four_columns,
+        &four_rows,
+        &two_rows_of_two,
+        &two_rows_one_three,
+        &two_rows_three_one,
+        &two_columns_one_three,
+        &two_columns_three_one,
+        &three_rows_211,
+        &three_rows_121,
+        &three_rows_112
+    ]);
 }
 
 fn build_4_mosaic(first: RgbImage, second: RgbImage, third: RgbImage, fourth: RgbImage) -> RgbImage {
-    let first_size = Size {
-        width: first.width(),
-        height: first.height(),
-    };
-    let second_size = Size {
-        width: second.width(),
-        height: second.height(),
-    };
-    let third_size = Size {
-        width: third.width(),
-        height: third.height(),
-    };
-    let fourth_size = Size {
-        width: fourth.width(),
-        height: fourth.height(),
-    };
+    let first_size = Size { width: first.width(), height: first.height() };
+    let second_size = Size { width: second.width(), height: second.height() };
+    let third_size = Size { width: third.width(), height: third.height() };
+    let fourth_size = Size { width: fourth.width(), height: fourth.height() };
     let best_mosaic = best_4_mosaic(first_size, second_size, third_size, fourth_size);
     build_mosaic(best_mosaic, [first, second, third, fourth])
 }
@@ -708,6 +711,7 @@ fn four_rows_4_mosaic(first: Size, second: Size, third: Size, fourth: Size) -> M
         dimensions: scale_width_dimension(second, first.width),
         original_dimensions: second,
     };
+
     let image3_offset = ImageOffset {
         offset: Size {
             width: 0,
@@ -927,6 +931,7 @@ fn three_rows_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size)
         dimensions: scale_width_dimension(first, third_row.total_size().width),
         original_dimensions: first,
     };
+
     let image2_offset = ImageOffset {
         offset: Size {
             width: 0,
@@ -935,6 +940,7 @@ fn three_rows_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Size)
         dimensions: scale_width_dimension(second, third_row.total_size().width),
         original_dimensions: second,
     };
+
     let third_row_moved = third_row.add_height(image2_offset.total_height() + SPACING_SIZE);
 
     MosaicImageDims {
@@ -987,6 +993,7 @@ fn three_columns_121_4_mosaic(first: Size, second: Size, third: Size, fourth: Si
         dimensions: scale_height_dimension(first, second_col.total_size().height),
         original_dimensions: first,
     };
+
     let second_col_moved = second_col.add_width(image1_offset.total_width() + SPACING_SIZE);
 
     MosaicImageDims {
@@ -1017,6 +1024,7 @@ fn three_columns_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Si
         dimensions: scale_height_dimension(first, third_col.total_size().height),
         original_dimensions: first,
     };
+
     let image2_offset = ImageOffset {
         offset: Size {
             width: image1_offset.total_width() + SPACING_SIZE,
@@ -1025,6 +1033,7 @@ fn three_columns_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Si
         dimensions: scale_height_dimension(second, third_col.total_size().height),
         original_dimensions: second,
     };
+
     let third_col_moved = third_col.add_width(image2_offset.total_width() + SPACING_SIZE);
 
     MosaicImageDims {
@@ -1040,7 +1049,9 @@ fn three_columns_112_4_mosaic(first: Size, second: Size, third: Size, fourth: Si
 #[cfg(test)]
 mod tests {
     use std::fs;
+
     use image::{Rgb, RgbImage};
+
     use crate::mosaic;
 
     const BLACK: Rgb<u8> = Rgb([0, 0, 0]);
@@ -1137,7 +1148,7 @@ mod tests {
         save_result(&result, "3-three_cols");
         assert!(is_colour_in_range(0, 0, 100, 400, &result, RED));
         assert!(has_black_vertical_line(105, &result));
-        assert!(is_colour_in_range(120, 0,300, 400, &result, BLUE));
+        assert!(is_colour_in_range(120, 0, 300, 400, &result, BLUE));
         assert!(has_black_vertical_line(315, &result));
         assert!(is_colour_in_range(330, 0, 400, 400, &result, GREEN));
     }
@@ -1234,7 +1245,7 @@ mod tests {
         save_result(&result, "4-four_cols");
         assert!(is_colour_in_range(0, 0, 100, 400, &result, RED));
         assert!(has_black_vertical_line(105, &result));
-        assert!(is_colour_in_range(120, 0,200, 400, &result, BLUE));
+        assert!(is_colour_in_range(120, 0, 200, 400, &result, BLUE));
         assert!(has_black_vertical_line(215, &result));
         assert!(is_colour_in_range(230, 0, 300, 400, &result, GREEN));
         assert!(has_black_vertical_line(325, &result));
@@ -1253,9 +1264,9 @@ mod tests {
         save_result(&result, "4-four_rows");
         assert!(is_colour_in_range(0, 0, 400, 100, &result, RED));
         assert!(has_black_horizontal_line(105, &result));
-        assert!(is_colour_in_range(0,120, 400, 200, &result, BLUE));
+        assert!(is_colour_in_range(0, 120, 400, 200, &result, BLUE));
         assert!(has_black_horizontal_line(215, &result));
-        assert!(is_colour_in_range(0, 230,  400, 300, &result, GREEN));
+        assert!(is_colour_in_range(0, 230, 400, 300, &result, GREEN));
         assert!(has_black_horizontal_line(325, &result));
         assert!(is_colour_in_range(0, 340, 400, 400, &result, PURPLE));
     }
