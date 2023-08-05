@@ -8,3 +8,4 @@ build/
 /target
 /dist
 .idea/
+mosaic_tests/
