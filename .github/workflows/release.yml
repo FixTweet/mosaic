@@ -62,22 +62,13 @@ jobs:
     - name: Download Artifacts
       uses: actions/download-artifact@v2
 
-    - name: Create GitHub Release
-      uses: gh-actions/create-release@v1.1.4
+    - name: Upload Release Asset
+    - name: Create GitHub Release and Upload Assets
+      uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
         draft: true
-        prerelease: false
+        files: |
+          target/${{ matrix.target }}/release/mosaic${{ matrix.target == 'x86_64-pc-windows-gnu' && '.exe' || '' }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1.0.2
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./mosaic-${{ matrix.target }}
-        asset_name: mosaic-${{ matrix.target }}
-        asset_content_type: application/octet-stream
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
