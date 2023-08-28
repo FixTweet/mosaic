@@ -49,7 +49,8 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: mosaic-${{ matrix.target }}
-        path: target/${{ matrix.target }}/release/mosaic
+        path: target/${{ matrix.target }}/release/mosaic${{ matrix.target == 'x86_64-pc-windows-gnu' && '.exe' || '' }}
+
 
   release:
     needs: build
@@ -66,7 +67,7 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
-        draft: false
+        draft: true
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
