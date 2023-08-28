@@ -263,25 +263,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fixtweet-mosaic"
-version = "0.1.0"
-dependencies = [
- "axum",
- "bytes",
- "const_format",
- "futures",
- "image",
- "lazy_static",
- "reqwest",
- "serde",
- "tokio",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "webp",
-]
-
-[[package]]
 name = "flate2"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -735,6 +716,25 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys",
+]
+
+[[package]]
+name = "mosaic"
+version = "1.0.0"
+dependencies = [
+ "axum",
+ "bytes",
+ "const_format",
+ "futures",
+ "image",
+ "lazy_static",
+ "reqwest",
+ "serde",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "webp",
 ]
 
 [[package]]
