@@ -46,28 +46,7 @@ jobs:
         args: --release --target ${{ matrix.target }}
 
     - name: Upload Release Asset
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: mosaic-${{ matrix.target }}
         path: target/${{ matrix.target }}/release/mosaic${{ matrix.target == 'x86_64-pc-windows-gnu' && '.exe' || '' }}
-
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Download Artifacts
-      uses: actions/download-artifact@v2
-
-    - name: Create GitHub Release and Upload Assets
-      uses: softprops/action-gh-release@v1
-      with:
-        draft: true
-        files: |
-          target/${{ matrix.target }}/release/mosaic${{ matrix.target == 'x86_64-pc-windows-gnu' && '.exe' || '' }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
