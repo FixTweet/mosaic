@@ -45,12 +45,21 @@ jobs:
         sudo apt-get install -y gcc-aarch64-linux-gnu
 
 
-    - name: Build
+    - name: Build (Cross-Compile)
+      if: matrix.target == 'aarch64-unknown-linux-gnu'
       uses: actions-rs/cargo@v1
       with:
         use-cross: true
         command: build
-        args: --release --target ${{ matrix.target }}
+        args: --release --target ${{ matrix.target }} -vv
+
+    - name: Build (Native Toolchain)
+      if: matrix.target != 'aarch64-unknown-linux-gnu'
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release --target ${{ matrix.target }} -vv
+
 
     - name: Upload Release Asset
       uses: actions/upload-artifact@v3
