@@ -3,7 +3,7 @@ WORKDIR /usr/src/mosaic
 COPY . .
 RUN cargo install --path .
 
-FROM scratch
+FROM alpine:latest
 COPY --from=builder /usr/local/cargo/bin/mosaic /usr/local/bin/mosaic
 
 CMD ["mosaic"]
